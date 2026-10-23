@@ -84,6 +84,17 @@ class ApiService {
   }
 
   // --- Environment Data ---
+  public async fetchUrl(url: string): Promise<string> {
+    if (this.hasElectron) {
+      return await window.api!.invoke('APP_FETCH_URL', url);
+    }
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+    return await res.text();
+  }
+
   public async readFile(filePath: string): Promise<string | null> {
     if (this.hasElectron) {
       try {

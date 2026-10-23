@@ -7,6 +7,7 @@ import { EnvironmentNav } from './components/Layout/EnvironmentNav';
 import { Header } from './components/Layout/Header';
 import { MainContent } from './components/Layout/MainContent';
 import { SettingsDialog } from './components/SettingsDialog/SettingsDialog';
+import { OpenApiImportDialog } from './components/OpenApiImportDialog/OpenApiImportDialog';
 import { apiService } from './services/api.service';
 
 export const AppContent: React.FC = () => {
@@ -28,7 +29,9 @@ export const AppContent: React.FC = () => {
     deleteRoute,
     themeMode,
     themePreset,
-    layoutDensity
+    layoutDensity,
+    isOpenApiDialogOpen,
+    setIsOpenApiDialogOpen
   } = useApp();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -202,6 +205,12 @@ export const AppContent: React.FC = () => {
 
         {/* Global Settings Dialog */}
         <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+
+        {/* OpenAPI / Swagger Import Dialog */}
+        <OpenApiImportDialog
+          open={isOpenApiDialogOpen}
+          onClose={() => setIsOpenApiDialogOpen(false)}
+        />
       </Box>
     </ThemeProvider>
   );

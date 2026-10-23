@@ -66,6 +66,9 @@ interface AppContextType {
   createEnvironment: () => Promise<void>;
   importEnvironment: () => Promise<void>;
   createEnvironmentFromOpenApi: () => Promise<void>;
+  importEnvironmentFromOpenApiContent: (content: string, sourcePath?: string) => Promise<Environment>;
+  isOpenApiDialogOpen: boolean;
+  setIsOpenApiDialogOpen: (open: boolean) => void;
   openRecentEnvironment: (path: string) => Promise<void>;
   clearRecentEnvironments: () => Promise<void>;
   recentLocalEnvironments: RecentLocalEnvironment[];
@@ -294,6 +297,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [layoutDensity, setLayoutDensityState] =
     useState<LayoutDensity>('compact');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+  const [isOpenApiDialogOpen, setIsOpenApiDialogOpen] = useState<boolean>(false);
   const [mainMenuSize, setMainMenuSizeState] = useState<number>(220);
   const [secondaryMenuSize, setSecondaryMenuSizeState] = useState<number>(290);
 
@@ -636,72 +640,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [environments, settings]);
 
-  // New Environment from OpenAPI/Swagger
-  const createEnvironmentFromOpenApi = useCallback(async () => {
-    const res = await apiService.showOpenDialog({
-      title: 'Open OpenAPI / Swagger Specification',
-      filters: [
-        { name: 'OpenAPI / Swagger File', extensions: ['json', 'yaml', 'yml'] },
-        { name: 'All Files', extensions: ['*'] }
-      ],
-      properties: ['openFile']
-    });
-
-    if (!res.canceled && res.filePaths?.[0]) {
-      const filePath = res.filePaths[0];
-      const content = await apiService.readFile(filePath);
-      if (content) {
-        try {
-          const converter = new OpenApiConverter();
-          const maxPort = environments.reduce(
-            (max, env) => Math.max(max, env.port || 3000),
-            2999
-          );
-          const newPort = maxPort + 1;
-          const converted = await converter.convertFromOpenAPI(content, newPort);
-          if (converted) {
-            const cleanData = sanitizeEnvironment(converted);
-            cleanData.uuid = 'env_' + Math.random().toString(36).substring(2, 10);
-            const storagePath = await apiService.buildStorageFilePath(cleanData.uuid);
-            const desc: EnvironmentDescriptor = {
-              uuid: cleanData.uuid,
-              path: storagePath,
-              cloud: false,
-              lastServerHash: null
-            };
-            await apiService.writeEnvironment(cleanData, desc, true);
-
-            const nextEnvs = [...environments, cleanData];
-            setEnvironments(nextEnvs);
-            setActiveEnvironmentUuid(cleanData.uuid);
-
-            if (settings) {
-              const recent: RecentLocalEnvironment = {
-                name: cleanData.name,
-                path: storagePath
-              };
-              const recentList = [
-                recent,
-                ...(settings.recentLocalEnvironments || []).filter((r) => r.path !== storagePath)
-              ].slice(0, 10);
-
-              const nextSettings: Settings = {
-                ...settings,
-                environments: [...settings.environments, desc],
-                activeEnvironmentUuid: cleanData.uuid,
-                recentLocalEnvironments: recentList
-              };
-              setSettings(nextSettings);
-              await apiService.writeSettings(nextSettings);
-            }
-          }
-        } catch (err: any) {
-          console.error('Failed to import OpenAPI/Swagger:', err);
-          alert(err?.message || 'Failed to parse OpenAPI/Swagger specification file.');
-        }
+  // Import Environment from OpenAPI/Swagger content string
+  const importEnvironmentFromOpenApiContent = useCallback(
+    async (content: string, sourcePath?: string) => {
+      const converter = new OpenApiConverter();
+      const maxPort = environments.reduce(
+        (max, env) => Math.max(max, env.port || 3000),
+        2999
+      );
+      const newPort = maxPort + 1;
+      const converted = await converter.convertFromOpenAPI(content, newPort);
+      if (!converted) {
+        throw new Error('无法解析为有效的 OpenAPI / Swagger 规范');
       }
-    }
-  }, [environments, settings]);
+
+      const cleanData = sanitizeEnvironment(converted);
+      cleanData.uuid = 'env_' + Math.random().toString(36).substring(2, 10);
+      const storagePath = await apiService.buildStorageFilePath(cleanData.uuid);
+      const desc: EnvironmentDescriptor = {
+        uuid: cleanData.uuid,
+        path: storagePath,
+        cloud: false,
+        lastServerHash: null
+      };
+      await apiService.writeEnvironment(cleanData, desc, true);
+
+      const nextEnvs = [...environments, cleanData];
+      setEnvironments(nextEnvs);
+      setActiveEnvironmentUuid(cleanData.uuid);
+
+      if (settings) {
+        const recent: RecentLocalEnvironment = {
+          name: cleanData.name,
+          path: sourcePath || storagePath
+        };
+        const recentList = [
+          recent,
+          ...(settings.recentLocalEnvironments || []).filter(
+            (r) => r.path !== (sourcePath || storagePath)
+          )
+        ].slice(0, 10);
+
+        const nextSettings: Settings = {
+          ...settings,
+          environments: [...settings.environments, desc],
+          activeEnvironmentUuid: cleanData.uuid,
+          recentLocalEnvironments: recentList
+        };
+        setSettings(nextSettings);
+        await apiService.writeSettings(nextSettings);
+      }
+      return cleanData;
+    },
+    [environments, settings]
+  );
+
+  // New Environment from OpenAPI/Swagger: opens dialog
+  const createEnvironmentFromOpenApi = useCallback(async () => {
+    setIsOpenApiDialogOpen(true);
+  }, []);
 
   // Open Recent Environment
   const openRecentEnvironment = useCallback(
@@ -1184,6 +1181,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         createEnvironment,
         importEnvironment,
         createEnvironmentFromOpenApi,
+        importEnvironmentFromOpenApiContent,
+        isOpenApiDialogOpen,
+        setIsOpenApiDialogOpen,
         openRecentEnvironment,
         clearRecentEnvironments,
         recentLocalEnvironments: settings?.recentLocalEnvironments || [],

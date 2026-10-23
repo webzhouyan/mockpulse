@@ -210,6 +210,14 @@ export const initIPCListeners = (mainWindow: BrowserWindow) => {
     clipboard.readText('clipboard')
   );
 
+  ipcMain.handle('APP_FETCH_URL', async (event, url: string) => {
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+    return await res.text();
+  });
+
   /**
    * This IPC channel must be mocked when running e2e tests
    */
