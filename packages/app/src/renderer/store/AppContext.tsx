@@ -1,5 +1,19 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { Environment, Environments, Route, RouteResponse, Header, Callback, DataBucket, Transaction } from '@mockoon/commons';
+import {
+  Environment,
+  Environments,
+  Route,
+  RouteResponse,
+  Header,
+  Callback,
+  DataBucket,
+  Transaction,
+  BuildDemoEnvironment,
+  BuildHTTPRoute,
+  BuildCRUDRoute,
+  BuildWebSocketRoute,
+  BuildFolder
+} from '@mockoon/commons';
 import { Settings, EnvironmentDescriptor } from 'src/shared/models/settings.model';
 import { apiService } from '../services/api.service';
 import { ThemePresetKey, LayoutDensity } from '../theme';
@@ -20,8 +34,10 @@ interface AppContextType {
   setActiveTabKey: (key: string) => void;
   selectedRouteUuid: string | null;
   setSelectedRouteUuid: (uuid: string | null) => void;
-  addRoute: () => void;
+  addRoute: (type?: 'http' | 'crud' | 'ws') => void;
+  duplicateRoute: (uuid: string) => void;
   deleteRoute: (uuid: string) => void;
+  addFolder: (name?: string) => void;
   setActiveEnvironmentUuid: (uuid: string) => void;
   updateActiveEnvironment: (updater: (prev: Environment) => Environment) => void;
   createEnvironment: () => Promise<void>;
@@ -90,72 +106,12 @@ export const DEFAULT_GLOBAL_HEADERS = [
   { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Origin, Accept, Authorization, Content-Length, X-Requested-With' }
 ];
 
-const createDefaultEnvironment = (name = 'Local API'): Environment => {
-  const uuid = 'env_' + Math.random().toString(36).substring(2, 10);
+const createDefaultEnvironment = (name?: string): Environment => {
+  const demoEnv = BuildDemoEnvironment();
   return {
-    uuid,
-    lastMigration: 33,
-    name,
-    endpointPrefix: '',
-    latency: 0,
-    port: 3000,
-    hostname: 'localhost',
-    folders: [],
-    routes: [
-      {
-        uuid: 'route_' + Math.random().toString(36).substring(2, 10),
-        type: 'http',
-        documentation: 'Default user list API',
-        method: 'get',
-        endpoint: 'users',
-        responses: [
-          {
-            uuid: 'resp_' + Math.random().toString(36).substring(2, 10),
-            body: JSON.stringify([
-              { id: 1, name: 'John Doe', role: 'Developer' },
-              { id: 2, name: 'Alice Smith', role: 'Designer' }
-            ], null, 2),
-            latency: 0,
-            statusCode: 200,
-            label: '200 OK',
-            headers: [{ key: 'Content-Type', value: 'application/json' }],
-            bodyType: 'INLINE',
-            filePath: '',
-            databucketID: '',
-            sendFileAsBody: false,
-            rules: [],
-            rulesOperator: 'OR',
-            disableTemplating: false,
-            fallbackTo404: false,
-            default: true,
-            crudKey: 'id',
-            callbacks: []
-          }
-        ],
-        responseMode: null,
-        streamingMode: null,
-        streamingInterval: 0
-      }
-    ],
-    rootChildren: [],
-    proxyMode: false,
-    proxyHost: '',
-    proxyRemovePrefix: false,
-    tlsOptions: {
-      enabled: false,
-      type: 'CERT',
-      pfxPath: '',
-      certPath: '',
-      keyPath: '',
-      caPath: '',
-      passphrase: ''
-    },
-    cors: true,
-    headers: [...DEFAULT_GLOBAL_HEADERS],
-    proxyReqHeaders: [],
-    proxyResHeaders: [],
-    data: [],
-    callbacks: []
+    ...demoEnv,
+    name: name || 'Demo API',
+    hostname: 'localhost'
   };
 };
 
@@ -511,40 +467,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setServerLogs((prev) => ({ ...prev, [uuid]: [] }));
   }, []);
 
-  // Add Route
-  const addRoute = useCallback(() => {
+  // Add Route (HTTP, CRUD, WS)
+  const addRoute = useCallback((type: 'http' | 'crud' | 'ws' = 'http') => {
     if (!activeEnvironment) return;
-    const newRoute: Route = {
-      uuid: 'route_' + Math.random().toString(36).substring(2, 10),
-      type: 'http',
-      documentation: '',
-      method: 'get',
-      endpoint: 'new-endpoint',
-      responses: [
-        {
-          uuid: 'resp_' + Math.random().toString(36).substring(2, 10),
-          body: '{\n  "message": "Hello from MockPulse"\n}',
-          latency: 0,
-          statusCode: 200,
-          label: '200 OK',
-          headers: [{ key: 'Content-Type', value: 'application/json' }],
-          bodyType: 'INLINE',
-          filePath: '',
-          databucketID: '',
-          sendFileAsBody: false,
-          rules: [],
-          rulesOperator: 'OR',
-          disableTemplating: false,
-          fallbackTo404: false,
-          default: true,
-          crudKey: 'id',
-          callbacks: []
-        }
-      ],
-      responseMode: null,
-      streamingMode: null,
-      streamingInterval: 0
-    };
+    let newRoute: Route;
+    if (type === 'crud') {
+      const firstBucketId = activeEnvironment.data?.[0]?.id || '';
+      newRoute = {
+        ...BuildCRUDRoute(true, { endpoint: 'new-crud', databucketID: firstBucketId }),
+        endpoint: 'new-crud',
+        documentation: 'CRUD Route'
+      };
+    } else if (type === 'ws') {
+      newRoute = {
+        ...BuildWebSocketRoute(true, { endpoint: 'ws', body: '{\n  "message": "WS Hello"\n}' }),
+        endpoint: 'ws',
+        documentation: 'WebSocket Route'
+      };
+    } else {
+      newRoute = {
+        ...BuildHTTPRoute(true, { endpoint: 'new-endpoint', body: '{\n  "message": "Hello from MockPulse"\n}' }),
+        endpoint: 'new-endpoint',
+        documentation: ''
+      };
+    }
 
     updateActiveEnvironment((env) => ({
       ...env,
@@ -552,6 +498,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
     setSelectedRouteUuid(newRoute.uuid);
     setActiveTabKey('routes');
+  }, [activeEnvironment, updateActiveEnvironment]);
+
+  // Duplicate Route
+  const duplicateRoute = useCallback((routeUuid: string) => {
+    if (!activeEnvironment) return;
+    const targetIdx = activeEnvironment.routes.findIndex((r) => r.uuid === routeUuid);
+    if (targetIdx === -1) return;
+    const source = activeEnvironment.routes[targetIdx];
+
+    const duplicated: Route = {
+      ...JSON.parse(JSON.stringify(source)),
+      uuid: 'route_' + Math.random().toString(36).substring(2, 10),
+      endpoint: `${source.endpoint}-copy`,
+      documentation: source.documentation ? `${source.documentation} (Copy)` : 'Copy',
+      responses: (source.responses || []).map((resp: any) => ({
+        ...resp,
+        uuid: 'resp_' + Math.random().toString(36).substring(2, 10)
+      }))
+    };
+
+    const nextRoutes = [...activeEnvironment.routes];
+    nextRoutes.splice(targetIdx + 1, 0, duplicated);
+
+    updateActiveEnvironment((env) => ({
+      ...env,
+      routes: nextRoutes
+    }));
+    setSelectedRouteUuid(duplicated.uuid);
+    setActiveTabKey('routes');
+  }, [activeEnvironment, updateActiveEnvironment]);
+
+  // Add Folder
+  const addFolder = useCallback((name = 'New folder') => {
+    if (!activeEnvironment) return;
+    const newFolder = BuildFolder();
+    newFolder.name = name;
+    updateActiveEnvironment((env) => ({
+      ...env,
+      folders: [...(env.folders || []), newFolder]
+    }));
   }, [activeEnvironment, updateActiveEnvironment]);
 
   // Delete Route
@@ -590,7 +576,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         selectedRouteUuid,
         setSelectedRouteUuid,
         addRoute,
+        duplicateRoute,
         deleteRoute,
+        addFolder,
         setActiveEnvironmentUuid,
         updateActiveEnvironment,
         createEnvironment,

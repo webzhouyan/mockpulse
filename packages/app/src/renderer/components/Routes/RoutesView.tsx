@@ -49,7 +49,10 @@ const METHOD_COLORS: Record<string, { bg: string; text: string }> = {
   patch: { bg: '#8b5cf6', text: '#ffffff' },
   delete: { bg: '#ef4444', text: '#ffffff' },
   options: { bg: '#64748b', text: '#ffffff' },
-  head: { bg: '#06b6d4', text: '#ffffff' }
+  head: { bg: '#06b6d4', text: '#ffffff' },
+  all: { bg: '#14b8a6', text: '#ffffff' },
+  crud: { bg: '#8b5cf6', text: '#ffffff' },
+  ws: { bg: '#06b6d4', text: '#ffffff' }
 };
 
 export const RoutesView: React.FC = () => {
@@ -232,7 +235,9 @@ export const RoutesView: React.FC = () => {
               }
             }}
             renderValue={(val) => {
-              const cfg = METHOD_COLORS[val.toLowerCase()] || METHOD_COLORS.get;
+              const methodKey = (activeRoute.type === 'crud' ? 'crud' : activeRoute.type === 'ws' ? 'ws' : val || 'get').toLowerCase();
+              const cfg = METHOD_COLORS[methodKey] || METHOD_COLORS.get;
+              const displayLabel = activeRoute.type === 'crud' ? 'CRUD' : activeRoute.type === 'ws' ? 'WS' : val || 'GET';
               return (
                 <Box
                   sx={{
@@ -246,7 +251,7 @@ export const RoutesView: React.FC = () => {
                     fontSize: '0.68rem'
                   }}
                 >
-                  {val}
+                  {displayLabel}
                 </Box>
               );
             }}
