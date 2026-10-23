@@ -216,76 +216,112 @@ export const RoutesView: React.FC = () => {
               : alpha(theme.palette.background.default, 0.9)
         }}
       >
-        {/* Method Select */}
-        <FormControl size="small" sx={{ width: 90, flexShrink: 0 }}>
-          <Select
-            value={activeRoute.method}
-            onChange={(e) => updateRoute((r) => ({ ...r, method: e.target.value as any }))}
+        {/* Method Select (Hidden for CRUD & WS routes, exactly like original Mockoon) */}
+        {activeRoute.type === 'crud' ? (
+          <Box
             sx={{
-              height: 30,
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              fontFamily: "'Fira Code', monospace",
+              px: 1.2,
+              py: 0.45,
               borderRadius: 1.5,
-              '& .MuiSelect-select': {
-                py: 0.4,
-                px: 1,
-                display: 'flex',
-                alignItems: 'center'
-              }
-            }}
-            renderValue={(val) => {
-              const methodKey = (activeRoute.type === 'crud' ? 'crud' : activeRoute.type === 'ws' ? 'ws' : val || 'get').toLowerCase();
-              const cfg = METHOD_COLORS[methodKey] || METHOD_COLORS.get;
-              const displayLabel = activeRoute.type === 'crud' ? 'CRUD' : activeRoute.type === 'ws' ? 'WS' : val || 'GET';
-              return (
-                <Box
-                  sx={{
-                    px: 0.8,
-                    py: 0.1,
-                    borderRadius: 1,
-                    backgroundColor: cfg.bg,
-                    color: cfg.text,
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    fontSize: '0.68rem'
-                  }}
-                >
-                  {displayLabel}
-                </Box>
-              );
+              backgroundColor: '#8b5cf6',
+              color: '#ffffff',
+              fontWeight: 800,
+              fontSize: '0.72rem',
+              fontFamily: "'Fira Code', monospace",
+              flexShrink: 0,
+              letterSpacing: '0.02em',
+              boxShadow: '0 1px 4px rgba(139, 92, 246, 0.35)'
             }}
           >
-            {HTTP_METHODS.map((m) => {
-              const cfg = METHOD_COLORS[m] || METHOD_COLORS.get;
-              return (
-                <MenuItem key={m} value={m} sx={{ py: 0.6 }}>
+            CRUD
+          </Box>
+        ) : activeRoute.type === 'ws' ? (
+          <Box
+            sx={{
+              px: 1.2,
+              py: 0.45,
+              borderRadius: 1.5,
+              backgroundColor: '#06b6d4',
+              color: '#ffffff',
+              fontWeight: 800,
+              fontSize: '0.72rem',
+              fontFamily: "'Fira Code', monospace",
+              flexShrink: 0,
+              letterSpacing: '0.02em',
+              boxShadow: '0 1px 4px rgba(6, 182, 212, 0.35)'
+            }}
+          >
+            WS
+          </Box>
+        ) : (
+          <FormControl size="small" sx={{ width: 90, flexShrink: 0 }}>
+            <Select
+              value={activeRoute.method}
+              onChange={(e) => updateRoute((r) => ({ ...r, method: e.target.value as any }))}
+              sx={{
+                height: 30,
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                fontFamily: "'Fira Code', monospace",
+                borderRadius: 1.5,
+                '& .MuiSelect-select': {
+                  py: 0.4,
+                  px: 1,
+                  display: 'flex',
+                  alignItems: 'center'
+                }
+              }}
+              renderValue={(val) => {
+                const cfg = METHOD_COLORS[val.toLowerCase()] || METHOD_COLORS.get;
+                return (
                   <Box
                     sx={{
                       px: 0.8,
-                      py: 0.15,
+                      py: 0.1,
                       borderRadius: 1,
                       backgroundColor: cfg.bg,
                       color: cfg.text,
                       fontWeight: 700,
                       textTransform: 'uppercase',
-                      fontFamily: "'Fira Code', monospace",
-                      fontSize: '0.68rem',
-                      minWidth: 46,
-                      textAlign: 'center',
-                      mr: 1
+                      fontSize: '0.68rem'
                     }}
                   >
-                    {m}
+                    {val}
                   </Box>
-                  <Typography variant="caption" sx={{ textTransform: 'uppercase', fontWeight: 600 }}>
-                    {m}
-                  </Typography>
-                </MenuItem>
-              );
-            })}
-          </Select>
-        </FormControl>
+                );
+              }}
+            >
+              {HTTP_METHODS.map((m) => {
+                const cfg = METHOD_COLORS[m] || METHOD_COLORS.get;
+                return (
+                  <MenuItem key={m} value={m} sx={{ py: 0.6 }}>
+                    <Box
+                      sx={{
+                        px: 0.8,
+                        py: 0.15,
+                        borderRadius: 1,
+                        backgroundColor: cfg.bg,
+                        color: cfg.text,
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        fontFamily: "'Fira Code', monospace",
+                        fontSize: '0.68rem',
+                        minWidth: 46,
+                        textAlign: 'center',
+                        mr: 1
+                      }}
+                    >
+                      {m}
+                    </Box>
+                    <Typography variant="caption" sx={{ textTransform: 'uppercase', fontWeight: 600 }}>
+                      {m}
+                    </Typography>
+                  </MenuItem>
+                );
+              })}
+            </Select>
+          </FormControl>
+        )}
 
         <Typography
           sx={{

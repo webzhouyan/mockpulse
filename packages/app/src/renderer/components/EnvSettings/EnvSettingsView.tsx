@@ -195,6 +195,7 @@ export const EnvSettingsView: React.FC = () => {
           {/* CORS Switch */}
           <Box>
             <FormControlLabel
+              sx={{ ml: 0 }}
               control={
                 <Switch
                   checked={!!activeEnvironment.cors}
@@ -202,6 +203,7 @@ export const EnvSettingsView: React.FC = () => {
                     const cors = e.target.checked;
                     updateActiveEnvironment((env) => ({ ...env, cors }));
                   }}
+                  sx={{ mr: 1 }}
                 />
               }
               label={<Typography sx={{ fontWeight: 600 }}>{t.envSettings.cors}</Typography>}
@@ -216,6 +218,7 @@ export const EnvSettingsView: React.FC = () => {
           {/* TLS/HTTPS Switch */}
           <Box>
             <FormControlLabel
+              sx={{ ml: 0 }}
               control={
                 <Switch
                   checked={!!activeEnvironment.tlsOptions?.enabled}
@@ -226,6 +229,7 @@ export const EnvSettingsView: React.FC = () => {
                       tlsOptions: { ...env.tlsOptions, enabled }
                     }));
                   }}
+                  sx={{ mr: 1 }}
                 />
               }
               label={<Typography sx={{ fontWeight: 600 }}>{t.envSettings.tls}</Typography>}

@@ -174,25 +174,39 @@ export const DataBucketsView: React.FC = () => {
                     sx={{
                       borderRadius: 1.5,
                       py: isCompact ? 0.6 : 0.9,
-                      px: isCompact ? 1 : 1.2
+                      px: isCompact ? 1 : 1.2,
+                      pr: 4.5
                     }}
                   >
-                    <StorageRoundedIcon sx={{ fontSize: 16, mr: 1.2, color: theme.palette.primary.main }} />
-                    <ListItemText
-                      primary={bucket.name}
-                      secondary={bucket.id}
-                      primaryTypographyProps={{
-                        fontWeight: isSelected ? 600 : 500,
-                        fontSize: isCompact ? '0.78rem' : '0.85rem',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}
-                      secondaryTypographyProps={{
-                        fontSize: '0.68rem',
-                        fontFamily: "'Fira Code', monospace"
-                      }}
-                    />
+                    <StorageRoundedIcon sx={{ fontSize: 16, mr: 1.2, color: theme.palette.primary.main, flexShrink: 0 }} />
+                    <Box sx={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                      <Tooltip title={bucket.name} arrow enterDelay={500}>
+                        <Typography
+                          variant="body2"
+                          noWrap
+                          sx={{
+                            fontWeight: isSelected ? 600 : 500,
+                            fontSize: isCompact ? '0.78rem' : '0.85rem'
+                          }}
+                        >
+                          {bucket.name}
+                        </Typography>
+                      </Tooltip>
+                      <Tooltip title={bucket.id} arrow enterDelay={500}>
+                        <Typography
+                          variant="caption"
+                          noWrap
+                          sx={{
+                            display: 'block',
+                            fontSize: '0.68rem',
+                            color: theme.palette.text.secondary,
+                            fontFamily: "'Fira Code', monospace"
+                          }}
+                        >
+                          {bucket.id}
+                        </Typography>
+                      </Tooltip>
+                    </Box>
                   </ListItemButton>
                 </ListItem>
               );

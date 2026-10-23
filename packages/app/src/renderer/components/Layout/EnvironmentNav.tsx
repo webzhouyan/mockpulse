@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -8,11 +8,11 @@ import {
   List,
   ListItem,
   ListItemButton,
-  ListItemText,
   Collapse,
   Menu,
   MenuItem,
   ListItemIcon,
+  ListItemText,
   Divider,
   Dialog,
   DialogTitle,
@@ -43,6 +43,7 @@ import {
   Route,
   Folder,
   FolderChild,
+  Environment,
   reorderRoutesMutator,
   ReorderActionType
 } from '@mockoon/commons';
@@ -160,20 +161,19 @@ export const EnvironmentNav: React.FC = () => {
   // Compute Root Items to display
   const rootChildrenList: FolderChild[] = useMemo(() => {
     if (!activeEnvironment) return [];
-    if (activeEnvironment.rootChildren && activeEnvironment.rootChildren.length > 0) {
-      // Find any route not yet in rootChildren nor in any folder
-      const allAccountedFor = new Set<string>();
-      activeEnvironment.rootChildren.forEach((c) => allAccountedFor.add(c.uuid));
-      folders.forEach((f) => f.children?.forEach((fc) => allAccountedFor.add(fc.uuid)));
+    const allAccountedFor = new Set<string>();
+    (activeEnvironment.rootChildren || []).forEach((c) => allAccountedFor.add(c.uuid));
+    folders.forEach((f) => f.children?.forEach((fc) => allAccountedFor.add(fc.uuid)));
 
-      const extraRoutes: FolderChild[] = routes
-        .filter((r) => !allAccountedFor.has(r.uuid))
-        .map((r) => ({ type: 'route', uuid: r.uuid }));
+    const extraFolders: FolderChild[] = folders
+      .filter((f) => !allAccountedFor.has(f.uuid))
+      .map((f) => ({ type: 'folder', uuid: f.uuid }));
 
-      return [...activeEnvironment.rootChildren, ...extraRoutes];
-    }
-    // Fallback: flat list
-    return routes.map((r) => ({ type: 'route', uuid: r.uuid }));
+    const extraRoutes: FolderChild[] = routes
+      .filter((r) => !allAccountedFor.has(r.uuid))
+      .map((r) => ({ type: 'route', uuid: r.uuid }));
+
+    return [...(activeEnvironment.rootChildren || []), ...extraFolders, ...extraRoutes];
   }, [activeEnvironment?.rootChildren, routes, folders]);
 
   // Drag handlers
@@ -207,9 +207,9 @@ export const EnvironmentNav: React.FC = () => {
     const relY = e.clientY - rect.top;
 
     if (isTargetFolder) {
-      if (relY < 8) {
+      if (relY < 6) {
         setDropIndicator({ targetId, position: 'BEFORE' });
-      } else if (relY > rect.height - 8) {
+      } else if (relY > rect.height - 6) {
         setDropIndicator({ targetId, position: 'AFTER' });
       } else {
         setDropIndicator({ targetId, position: 'INSIDE' });
@@ -223,6 +223,84 @@ export const EnvironmentNav: React.FC = () => {
     }
     e.dataTransfer.dropEffect = 'move';
   };
+
+  // Robust Tree Move to guarantee moving route inside folder
+  const executeMove = useCallback(
+    (sourceId: string, isSourceFolder: boolean, targetId: string, isTargetFolder: boolean, action: 'BEFORE' | 'AFTER' | 'INSIDE', targetParentId: string) => {
+      if (!activeEnvironment) return;
+
+      // Ensure activeEnvironment has synchronized rootChildren before mutator runs
+      const accounted = new Set<string>();
+      (activeEnvironment.rootChildren || []).forEach((c) => accounted.add(c.uuid));
+      (activeEnvironment.folders || []).forEach((f) => f.children?.forEach((fc) => accounted.add(fc.uuid)));
+
+      const missingRoots: FolderChild[] = [];
+      (activeEnvironment.folders || []).forEach((f) => {
+        if (!accounted.has(f.uuid)) missingRoots.push({ type: 'folder', uuid: f.uuid });
+      });
+      (activeEnvironment.routes || []).forEach((r) => {
+        if (!accounted.has(r.uuid)) missingRoots.push({ type: 'route', uuid: r.uuid });
+      });
+
+      const normalizedEnv: Environment = {
+        ...activeEnvironment,
+        rootChildren: [...(activeEnvironment.rootChildren || []), ...missingRoots]
+      };
+
+      // 1. Direct Move INSIDE Folder
+      if (action === 'INSIDE' && isTargetFolder && !isSourceFolder) {
+        // Remove source route from root and all folders
+        const cleanRoot = normalizedEnv.rootChildren.filter((c) => c.uuid !== sourceId);
+        const cleanFolders = normalizedEnv.folders.map((f) => {
+          if (f.uuid === targetId) {
+            const alreadyHas = f.children.some((c) => c.uuid === sourceId);
+            return {
+              ...f,
+              children: alreadyHas ? f.children : [...f.children, { type: 'route' as const, uuid: sourceId }]
+            };
+          }
+          return {
+            ...f,
+            children: f.children.filter((c) => c.uuid !== sourceId)
+          };
+        });
+
+        updateActiveEnvironment(() => ({
+          ...normalizedEnv,
+          rootChildren: cleanRoot,
+          folders: cleanFolders
+        }));
+
+        // Expand target folder automatically so user sees the moved route
+        setCollapsedFolderUuids((prev) => ({ ...prev, [targetId]: false }));
+        return;
+      }
+
+      // 2. Standard Mutator for BEFORE/AFTER reorder
+      try {
+        const actionType =
+          action === 'INSIDE'
+            ? ReorderActionType.INSIDE
+            : action === 'BEFORE'
+            ? ReorderActionType.BEFORE
+            : ReorderActionType.AFTER;
+
+        const updated = reorderRoutesMutator(normalizedEnv, {
+          sourceId,
+          targetId,
+          targetParentId: action === 'INSIDE' ? targetId : targetParentId,
+          reorderActionType: actionType,
+          isSourceContainer: isSourceFolder,
+          isTargetContainer: isTargetFolder
+        });
+
+        updateActiveEnvironment(() => updated);
+      } catch (err) {
+        console.error('Failed to reorder tree:', err);
+      }
+    },
+    [activeEnvironment, updateActiveEnvironment]
+  );
 
   const handleDropOnItem = (
     e: React.DragEvent,
@@ -245,27 +323,14 @@ export const EnvironmentNav: React.FC = () => {
       return;
     }
 
-    try {
-      const actionType =
-        dropIndicator.position === 'INSIDE'
-          ? ReorderActionType.INSIDE
-          : dropIndicator.position === 'BEFORE'
-          ? ReorderActionType.BEFORE
-          : ReorderActionType.AFTER;
-
-      const updatedEnv = reorderRoutesMutator(activeEnvironment, {
-        sourceId: draggingItem.id,
-        targetId,
-        targetParentId: actionType === ReorderActionType.INSIDE ? targetId : targetParentId,
-        reorderActionType: actionType,
-        isSourceContainer: draggingItem.isFolder,
-        isTargetContainer: isTargetFolder
-      });
-
-      updateActiveEnvironment(() => updatedEnv);
-    } catch (err) {
-      console.error('Failed to reorder routes/folders:', err);
-    }
+    executeMove(
+      draggingItem.id,
+      draggingItem.isFolder,
+      targetId,
+      isTargetFolder,
+      dropIndicator.position,
+      targetParentId
+    );
 
     setDraggingItem(null);
     setDropIndicator(null);
@@ -279,7 +344,7 @@ export const EnvironmentNav: React.FC = () => {
     if (search.trim()) {
       const q = search.toLowerCase();
       const matches =
-        route.endpoint.toLowerCase().includes(q) ||
+        (route.endpoint || '').toLowerCase().includes(q) ||
         (route.method && route.method.toLowerCase().includes(q)) ||
         (route.documentation && route.documentation.toLowerCase().includes(q));
       if (!matches) return null;
@@ -373,6 +438,7 @@ export const EnvironmentNav: React.FC = () => {
             py: 0.4,
             px: 1,
             pl: indent ? 2.5 : 1,
+            pr: 4.8, // prevent secondaryAction from overlapping text
             minHeight: 32,
             gap: 0.8
           }}
@@ -395,36 +461,36 @@ export const EnvironmentNav: React.FC = () => {
             {badgeLabel}
           </Box>
 
-          {/* Path and optional documentation alias */}
+          {/* Path with Tooltip for long endpoints */}
           <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, overflow: 'hidden', flex: 1 }}>
-            <Typography
-              variant="body2"
-              sx={{
-                fontFamily: "'Fira Code', monospace",
-                fontSize: '0.78rem',
-                fontWeight: isSelected ? 600 : 500,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              /{cleanEndpoint}
-            </Typography>
-
-            {route.documentation && (
+            <Tooltip title={`/${cleanEndpoint}`} arrow enterDelay={400} placement="top">
               <Typography
-                variant="caption"
+                variant="body2"
+                noWrap
                 sx={{
-                  ml: 0.6,
-                  fontSize: '0.68rem',
-                  color: theme.palette.text.secondary,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
+                  fontFamily: "'Fira Code', monospace",
+                  fontSize: '0.78rem',
+                  fontWeight: isSelected ? 600 : 500
                 }}
               >
-                {route.documentation}
+                /{cleanEndpoint}
               </Typography>
+            </Tooltip>
+
+            {route.documentation && (
+              <Tooltip title={route.documentation} arrow enterDelay={400} placement="top">
+                <Typography
+                  variant="caption"
+                  noWrap
+                  sx={{
+                    ml: 0.6,
+                    fontSize: '0.68rem',
+                    color: theme.palette.text.secondary
+                  }}
+                >
+                  {route.documentation}
+                </Typography>
+              </Tooltip>
             )}
           </Box>
         </ListItemButton>
@@ -440,7 +506,7 @@ export const EnvironmentNav: React.FC = () => {
     const isDropAfter = dropIndicator?.targetId === folder.uuid && dropIndicator.position === 'AFTER';
     const isDropInside = dropIndicator?.targetId === folder.uuid && dropIndicator.position === 'INSIDE';
 
-    const childRoutes = folder.children
+    const childRoutes = (folder.children || [])
       .map((c) => (c.type === 'route' ? routeMap.get(c.uuid) : null))
       .filter((r): r is Route => Boolean(r));
 
@@ -450,22 +516,19 @@ export const EnvironmentNav: React.FC = () => {
         draggable
         onDragStart={(e) => handleDragStart(e, folder.uuid, true, 'root')}
         onDragEnd={handleDragEnd}
-        onDragOver={(e) => handleDragOverItem(e, folder.uuid, true, 'root')}
-        onDrop={(e) => handleDropOnItem(e, folder.uuid, true, 'root')}
         sx={{
           mb: 0.4,
           borderRadius: 1.5,
-          cursor: 'grab',
           opacity: isDragging ? 0.35 : 1,
           borderTop: isDropBefore ? `2px solid ${theme.palette.primary.main}` : 'none',
-          borderBottom: isDropAfter ? `2px solid ${theme.palette.primary.main}` : 'none',
-          backgroundColor: isDropInside ? alpha(theme.palette.primary.main, 0.12) : 'transparent',
-          transition: 'background-color 0.15s ease'
+          borderBottom: isDropAfter ? `2px solid ${theme.palette.primary.main}` : 'none'
         }}
       >
-        {/* Folder Header */}
+        {/* Folder Header as Drop Target */}
         <Box
           className="folder-header"
+          onDragOver={(e) => handleDragOverItem(e, folder.uuid, true, 'root')}
+          onDrop={(e) => handleDropOnItem(e, folder.uuid, true, 'root')}
           sx={{
             display: 'flex',
             alignItems: 'center',
@@ -473,8 +536,15 @@ export const EnvironmentNav: React.FC = () => {
             py: 0.4,
             borderRadius: 1.5,
             minHeight: 32,
+            cursor: 'pointer',
+            backgroundColor: isDropInside
+              ? alpha(theme.palette.primary.main, 0.16)
+              : 'transparent',
+            transition: 'background-color 0.15s ease',
             '&:hover': {
-              backgroundColor: alpha(theme.palette.text.primary, 0.04)
+              backgroundColor: isDropInside
+                ? alpha(theme.palette.primary.main, 0.18)
+                : alpha(theme.palette.text.primary, 0.04)
             },
             '&:hover .folder-actions': { opacity: 0.9 }
           }}
@@ -482,7 +552,10 @@ export const EnvironmentNav: React.FC = () => {
           {/* Collapse Toggle */}
           <IconButton
             size="small"
-            onClick={() => toggleFolderCollapse(folder.uuid)}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFolderCollapse(folder.uuid);
+            }}
             sx={{ p: 0.3, mr: 0.3 }}
           >
             {isCollapsed ? (
@@ -502,15 +575,12 @@ export const EnvironmentNav: React.FC = () => {
           {/* Folder Name */}
           <Typography
             variant="body2"
+            noWrap
             onClick={() => toggleFolderCollapse(folder.uuid)}
             sx={{
               fontWeight: 600,
               fontSize: '0.78rem',
-              flex: 1,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              cursor: 'pointer'
+              flex: 1
             }}
           >
             {folder.name}
@@ -534,7 +604,10 @@ export const EnvironmentNav: React.FC = () => {
             <Tooltip title="重命名文件夹" arrow>
               <IconButton
                 size="small"
-                onClick={() => setEditingFolder({ uuid: folder.uuid, name: folder.name })}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingFolder({ uuid: folder.uuid, name: folder.name });
+                }}
                 sx={{ p: 0.3, color: theme.palette.text.secondary, '&:hover': { color: theme.palette.primary.main } }}
               >
                 <EditRoundedIcon sx={{ fontSize: 13 }} />
@@ -544,7 +617,10 @@ export const EnvironmentNav: React.FC = () => {
             <Tooltip title="删除文件夹" arrow>
               <IconButton
                 size="small"
-                onClick={() => deleteFolder(folder.uuid)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteFolder(folder.uuid);
+                }}
                 sx={{ p: 0.3, color: theme.palette.text.secondary, '&:hover': { color: theme.palette.error.main } }}
               >
                 <DeleteOutlineRoundedIcon sx={{ fontSize: 14 }} />
@@ -555,22 +631,49 @@ export const EnvironmentNav: React.FC = () => {
 
         {/* Children Routes inside Folder */}
         <Collapse in={!isCollapsed}>
-          <List sx={{ p: 0, mt: 0.2 }}>
+          <List
+            sx={{ p: 0, mt: 0.2 }}
+            onDragOver={(e) => {
+              if (childRoutes.length === 0) {
+                e.preventDefault();
+                e.stopPropagation();
+                setDropIndicator({ targetId: folder.uuid, position: 'INSIDE' });
+              }
+            }}
+            onDrop={(e) => {
+              if (childRoutes.length === 0) {
+                handleDropOnItem(e, folder.uuid, true, 'root');
+              }
+            }}
+          >
             {childRoutes.map((route) => renderRouteItem(route, folder.uuid, true))}
             {childRoutes.length === 0 && (
-              <Typography
-                variant="caption"
+              <Box
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setDropIndicator({ targetId: folder.uuid, position: 'INSIDE' });
+                }}
+                onDrop={(e) => handleDropOnItem(e, folder.uuid, true, 'root')}
                 sx={{
-                  display: 'block',
                   pl: 3.5,
-                  py: 0.6,
-                  color: theme.palette.text.disabled,
-                  fontSize: '0.7rem',
-                  fontStyle: 'italic'
+                  py: 0.8,
+                  borderRadius: 1,
+                  backgroundColor: isDropInside ? alpha(theme.palette.primary.main, 0.1) : 'transparent'
                 }}
               >
-                (空文件夹，可直接拖入接口)
-              </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: isDropInside ? theme.palette.primary.main : theme.palette.text.disabled,
+                    fontSize: '0.7rem',
+                    fontStyle: 'italic',
+                    fontWeight: isDropInside ? 600 : 400
+                  }}
+                >
+                  {isDropInside ? '释放以移入此文件夹' : '(空文件夹，可直接拖入接口)'}
+                </Typography>
+              </Box>
             )}
           </List>
         </Collapse>
@@ -595,7 +698,7 @@ export const EnvironmentNav: React.FC = () => {
         userSelect: 'none'
       }}
     >
-      {/* Top Search & Add Route with Dropdown Menu */}
+      {/* Top Search & Harmonious Compact Add Route Control */}
       <Box
         sx={{
           p: 1.2,
@@ -625,51 +728,59 @@ export const EnvironmentNav: React.FC = () => {
           }}
         />
 
-        {/* Add Route Button with Dropdown */}
+        {/* Harmonious Compact Add Control (32px high, seamless, beautiful) */}
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
+            height: 32,
             borderRadius: 1.5,
-            overflow: 'hidden',
             backgroundColor: theme.palette.primary.main,
+            color: '#ffffff',
+            overflow: 'hidden',
+            boxShadow: `0 1px 3px ${alpha(theme.palette.primary.main, 0.35)}`,
+            transition: 'background-color 0.2s ease',
             flexShrink: 0,
-            boxShadow: `0 1px 4px ${alpha(theme.palette.primary.main, 0.35)}`
+            '&:hover': {
+              backgroundColor: theme.palette.primary.dark
+            }
           }}
         >
-          <Tooltip title="新增 HTTP 路由 (Add Route)" arrow>
-            <IconButton
-              size="small"
+          <Tooltip title="一键新增 HTTP 接口" arrow>
+            <Box
               onClick={() => addRoute('http')}
               sx={{
-                width: 26,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 28,
                 height: 32,
-                borderRadius: 0,
-                color: '#ffffff',
-                '&:hover': { backgroundColor: theme.palette.primary.dark }
+                cursor: 'pointer',
+                transition: 'background-color 0.15s ease',
+                '&:hover': { backgroundColor: alpha('#ffffff', 0.15) }
               }}
             >
               <AddRoundedIcon sx={{ fontSize: 18 }} />
-            </IconButton>
+            </Box>
           </Tooltip>
 
-          <Box sx={{ width: '1px', height: 18, backgroundColor: alpha('#ffffff', 0.3) }} />
-
-          <Tooltip title="更多路由与文件夹 (More types)" arrow>
-            <IconButton
-              size="small"
+          <Tooltip title="更多类型：CRUD / WebSocket / 文件夹" arrow>
+            <Box
               onClick={(e) => setAddMenuAnchor(e.currentTarget)}
               sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 width: 18,
                 height: 32,
-                borderRadius: 0,
-                color: '#ffffff',
-                p: 0,
-                '&:hover': { backgroundColor: theme.palette.primary.dark }
+                cursor: 'pointer',
+                borderLeft: `1px solid ${alpha('#ffffff', 0.2)}`,
+                transition: 'background-color 0.15s ease',
+                '&:hover': { backgroundColor: alpha('#ffffff', 0.15) }
               }}
             >
-              <ArrowDropDownRoundedIcon sx={{ fontSize: 18 }} />
-            </IconButton>
+              <ArrowDropDownRoundedIcon sx={{ fontSize: 16 }} />
+            </Box>
           </Tooltip>
         </Box>
 

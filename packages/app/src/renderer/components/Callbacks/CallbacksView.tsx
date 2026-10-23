@@ -199,6 +199,7 @@ export const CallbacksView: React.FC = () => {
                       borderRadius: 1.5,
                       py: isCompact ? 0.6 : 0.9,
                       px: isCompact ? 1 : 1.2,
+                      pr: 4.5,
                       gap: 1
                     }}
                   >
@@ -218,24 +219,34 @@ export const CallbacksView: React.FC = () => {
                     >
                       {cb.method}
                     </Box>
-                    <ListItemText
-                      primary={cb.name}
-                      secondary={cb.uri}
-                      primaryTypographyProps={{
-                        fontWeight: isSelected ? 600 : 500,
-                        fontSize: isCompact ? '0.78rem' : '0.85rem',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}
-                      secondaryTypographyProps={{
-                        fontSize: '0.68rem',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        fontFamily: "'Fira Code', monospace"
-                      }}
-                    />
+                    <Box sx={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                      <Tooltip title={cb.name} arrow enterDelay={500}>
+                        <Typography
+                          variant="body2"
+                          noWrap
+                          sx={{
+                            fontWeight: isSelected ? 600 : 500,
+                            fontSize: isCompact ? '0.78rem' : '0.85rem'
+                          }}
+                        >
+                          {cb.name}
+                        </Typography>
+                      </Tooltip>
+                      <Tooltip title={cb.uri} arrow enterDelay={500}>
+                        <Typography
+                          variant="caption"
+                          noWrap
+                          sx={{
+                            display: 'block',
+                            fontSize: '0.68rem',
+                            color: theme.palette.text.secondary,
+                            fontFamily: "'Fira Code', monospace"
+                          }}
+                        >
+                          {cb.uri}
+                        </Typography>
+                      </Tooltip>
+                    </Box>
                   </ListItemButton>
                 </ListItem>
               );

@@ -32,6 +32,7 @@ export const ProxyView: React.FC = () => {
 
       <Paper variant="outlined" sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
         <FormControlLabel
+          sx={{ ml: 0 }}
           control={
             <Switch
               checked={!!activeEnvironment.proxyMode}
@@ -39,6 +40,7 @@ export const ProxyView: React.FC = () => {
                 const proxyMode = e.target.checked;
                 updateActiveEnvironment((env) => ({ ...env, proxyMode }));
               }}
+              sx={{ mr: 1 }}
             />
           }
           label={<Typography sx={{ fontWeight: 600 }}>{t.proxy.enableProxy}</Typography>}
@@ -58,6 +60,7 @@ export const ProxyView: React.FC = () => {
         />
 
         <FormControlLabel
+          sx={{ ml: 0 }}
           control={
             <Switch
               disabled={!activeEnvironment.proxyMode}
@@ -66,6 +69,7 @@ export const ProxyView: React.FC = () => {
                 const proxyRemovePrefix = e.target.checked;
                 updateActiveEnvironment((env) => ({ ...env, proxyRemovePrefix }));
               }}
+              sx={{ mr: 1 }}
             />
           }
           label={t.proxy.removePrefix}
