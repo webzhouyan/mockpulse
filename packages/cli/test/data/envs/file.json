@@ -1,0 +1,160 @@
+{
+  "uuid": "6cca9fb6-3585-4c0f-8cac-1150ce24452b",
+  "name": "Environment file",
+  "lastMigration": 33,
+  "port": 3000,
+  "endpointPrefix": "",
+  "latency": 0,
+  "hostname": "",
+  "routes": [
+    {
+      "uuid": "e15f2c20-92aa-4390-8f83-2da2473b47ee",
+      "documentation": "",
+      "method": "get",
+      "endpoint": "file",
+      "responses": [
+        {
+          "uuid": "fb849232-36f8-45f3-832e-e4f510459570",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "",
+          "headers": [],
+          "filePath": "../body-files/file1.txt",
+          "sendFileAsBody": true,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "databucketID": "",
+          "bodyType": "FILE",
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "type": "http",
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "8663d5f8-fe76-46a9-baca-437524edf763",
+      "documentation": "",
+      "method": "get",
+      "endpoint": "param1/:filename",
+      "responses": [
+        {
+          "uuid": "2b15bae3-13c7-475f-854a-09aa4817f2a5",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "",
+          "headers": [],
+          "filePath": "./{{urlParam 'filename'}}",
+          "sendFileAsBody": true,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "databucketID": "",
+          "bodyType": "FILE",
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "type": "http",
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "b0cd35cf-d6e6-4d6c-be4f-309af6d4e12a",
+      "documentation": "",
+      "method": "get",
+      "endpoint": "param2/:filename",
+      "responses": [
+        {
+          "uuid": "2d4b0c8a-1b57-4463-9aa0-7ffad0f97724",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "",
+          "headers": [],
+          "filePath": "../body-files/{{urlParam 'filename'}}.txt",
+          "sendFileAsBody": true,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "databucketID": "",
+          "bodyType": "FILE",
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "type": "http",
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "7f0b6d16-6b0a-4a8f-96f7-6b3d1b1a2a52",
+      "documentation": "",
+      "method": "get",
+      "endpoint": "testfile/:route",
+      "responses": [
+        {
+          "uuid": "a3e6bb04-6d13-4a1a-9a1e-2f0f6a0b6a11",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "",
+          "headers": [],
+          "filePath": "./file{{urlParam 'route'}}.json",
+          "sendFileAsBody": true,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "databucketID": "",
+          "bodyType": "FILE",
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "type": "http",
+      "streamingMode": null,
+      "streamingInterval": 0
+    }
+  ],
+  "proxyMode": false,
+  "proxyHost": "",
+  "proxyRemovePrefix": false,
+  "cors": true,
+  "headers": [{ "key": "Content-Type", "value": "application/json" }],
+  "proxyReqHeaders": [],
+  "proxyResHeaders": [],
+  "tlsOptions": {
+    "enabled": false,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "data": [],
+  "folders": [],
+  "rootChildren": [
+    { "type": "route", "uuid": "e15f2c20-92aa-4390-8f83-2da2473b47ee" },
+    { "type": "route", "uuid": "8663d5f8-fe76-46a9-baca-437524edf763" },
+    { "type": "route", "uuid": "b0cd35cf-d6e6-4d6c-be4f-309af6d4e12a" },
+    { "type": "route", "uuid": "7f0b6d16-6b0a-4a8f-96f7-6b3d1b1a2a52" }
+  ],
+  "callbacks": []
+}

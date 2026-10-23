@@ -1,0 +1,30 @@
+{
+  "uuid": "5d004e2c-6055-41bc-b0ac-4d0c064dddd1",
+  "lastMigration": 33,
+  "name": "mockhttps",
+  "endpointPrefix": "api",
+  "latency": 0,
+  "port": 3000,
+  "routes": [],
+  "proxyMode": false,
+  "proxyHost": "",
+  "cors": true,
+  "headers": [{ "key": "Content-Type", "value": "application/json" }],
+  "proxyReqHeaders": [{ "key": "", "value": "" }],
+  "proxyResHeaders": [{ "key": "", "value": "" }],
+  "proxyRemovePrefix": false,
+  "hostname": "",
+  "tlsOptions": {
+    "enabled": true,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "data": [],
+  "folders": [],
+  "rootChildren": [],
+  "callbacks": []
+}

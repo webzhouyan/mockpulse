@@ -1,0 +1,306 @@
+import { Environment, Environments } from '@mockoon/commons';
+import { mimeTypeLookup } from '@mockoon/commons-server';
+import { createHash } from 'crypto';
+import { BrowserWindow, clipboard, dialog, ipcMain, shell } from 'electron';
+import { getDataPath } from 'electron-json-storage';
+import { promises as fsPromises } from 'fs';
+import {
+  format as pathFormat,
+  join as pathJoin,
+  parse as pathParse,
+  resolve as pathResolve
+} from 'path';
+import {
+  IPCMainHandlerChannels,
+  IPCMainListenerChannels
+} from 'src/main/constants/ipc.constants';
+import { logError, logInfo } from 'src/main/libs/logs';
+import { updateMenuState } from 'src/main/libs/menu';
+import { showFolderInExplorer } from 'src/main/libs/paths';
+import { ServerInstance } from 'src/main/libs/server-management';
+import {
+  getSettings,
+  loadSettings,
+  saveSettings
+} from 'src/main/libs/settings';
+import { readJSONData, writeJSONData } from 'src/main/libs/storage';
+import { applyUpdate } from 'src/main/libs/update';
+import {
+  unwatchAllEnvironmentFiles,
+  unwatchEnvironmentFile,
+  watchEnvironmentFile
+} from 'src/main/libs/watch-file';
+import {
+  handleZoomIn,
+  handleZoomOut,
+  handleZoomReset
+} from 'src/main/libs/zoom';
+import { MenuStateUpdatePayload } from 'src/shared/models/ipc.model';
+import {
+  EnvironmentDescriptor,
+  Settings
+} from 'src/shared/models/settings.model';
+import { startAuthCallbackServer } from './auth';
+
+/**
+ * Returns the user data path or the last saved saved/opened directory
+ *
+ * @returns
+ */
+const getDialogDefaultPath = () => {
+  const settings = getSettings();
+
+  if (settings.dialogWorkingDir) {
+    return settings.dialogWorkingDir;
+  }
+
+  return getDataPath();
+};
+
+/**
+ * Build a full file path by combining an environment path to which a file is relatively located and a file path
+ *
+ * @param filePath
+ * @param relativeToFile
+ * @returns
+ */
+const buildFilePath = (filePath: string, relativeToFile: string): string => {
+  let relativeDir = '';
+
+  // if a relative path (mostly a path to an env data file) is provided, extract the directory
+  if (relativeToFile) {
+    relativeDir = pathParse(relativeToFile).dir;
+  }
+
+  return pathResolve(relativeDir, filePath);
+};
+
+export const initIPCListeners = (mainWindow: BrowserWindow) => {
+  // Quit requested by renderer (when waiting for save to finish)
+  ipcMain.on('APP_QUIT', () => {
+    // destroy the window otherwise app.quit() will trigger beforeunload again. Also there is no app.quit for macos
+    mainWindow.destroy();
+  });
+
+  ipcMain.on('APP_HIDE_WINDOW', () => {
+    mainWindow.hide();
+  });
+
+  ipcMain.on(
+    'APP_UPDATE_MENU_STATE',
+    (event, state: MenuStateUpdatePayload) => {
+      updateMenuState(state);
+    }
+  );
+
+  ipcMain.on('APP_LOGS', (event, data) => {
+    if (data.type === 'info') {
+      logInfo(data.message, data.payload);
+    } else if (data.type === 'error') {
+      logError(data.message, data.payload);
+    }
+  });
+
+  ipcMain.on('APP_SHOW_FILE', (event, filePath, relativeToFile) => {
+    shell.showItemInFolder(buildFilePath(filePath, relativeToFile));
+  });
+
+  ipcMain.on('APP_SHOW_FOLDER', (event, name) => {
+    showFolderInExplorer(name);
+  });
+
+  ipcMain.on('APP_AUTH', (event, loginURL?: string) => {
+    startAuthCallbackServer(loginURL);
+  });
+
+  ipcMain.on('APP_WRITE_CLIPBOARD', async (event, data) => {
+    clipboard.writeText(data, 'clipboard');
+  });
+
+  ipcMain.on('APP_UPDATE_ENVIRONMENTS', (event, environments: Environments) => {
+    ServerInstance.updateEnvironments(environments);
+  });
+
+  ipcMain.on(
+    'APP_UPDATE_DISABLED_ROUTES',
+    (event, disabledRoutes: Record<string, string[]>) => {
+      ServerInstance.updateDisabledRoutes(disabledRoutes);
+    }
+  );
+
+  ipcMain.on('APP_APPLY_UPDATE', () => {
+    applyUpdate();
+  });
+
+  ipcMain.on('APP_ZOOM', (event, action: 'IN' | 'OUT' | 'RESET') => {
+    if (action === 'IN') {
+      handleZoomIn(mainWindow);
+    } else if (action === 'OUT') {
+      handleZoomOut(mainWindow);
+    } else if (action === 'RESET') {
+      handleZoomReset(mainWindow);
+    }
+  });
+
+  ipcMain.handle(
+    'APP_UNWATCH_FILE',
+    async (event, uuid) => await unwatchEnvironmentFile(uuid)
+  );
+
+  ipcMain.handle(
+    'APP_UNWATCH_ALL_FILE',
+    async () => await unwatchAllEnvironmentFiles()
+  );
+
+  ipcMain.handle('APP_GET_OS', () => process.platform);
+
+  ipcMain.handle(
+    'APP_READ_ENVIRONMENT_DATA',
+    async (event, path: string) => await readJSONData(path)
+  );
+
+  ipcMain.handle(
+    'APP_WRITE_ENVIRONMENT_DATA',
+    async (
+      event,
+      data,
+      descriptor: EnvironmentDescriptor,
+      storagePrettyPrint?: boolean
+    ) => {
+      if (!descriptor.cloud) {
+        unwatchEnvironmentFile(data.uuid);
+      }
+      if (!descriptor?.path) {
+        throw new Error('Environment file path is missing or invalid');
+      }
+
+      await unwatchEnvironmentFile(data.uuid);
+
+      if (!descriptor.cloud) {
+        watchEnvironmentFile(data.uuid, descriptor.path);
+      }
+      try {
+        await writeJSONData(data, descriptor.path, storagePrettyPrint);
+      } finally {
+        watchEnvironmentFile(data.uuid, descriptor.path);
+      }
+    }
+  );
+
+  ipcMain.handle('APP_READ_SETTINGS_DATA', async () => await loadSettings());
+
+  ipcMain.handle(
+    'APP_WRITE_SETTINGS_DATA',
+    async (event, newSettings: Settings, storagePrettyPrint?: boolean) =>
+      await saveSettings(newSettings, storagePrettyPrint)
+  );
+
+  ipcMain.handle(
+    'APP_READ_FILE',
+    async (event, filePath) => await fsPromises.readFile(filePath, 'utf-8')
+  );
+
+  ipcMain.handle(
+    'APP_WRITE_FILE',
+    async (event, filePath, data) =>
+      await fsPromises.writeFile(filePath, data, 'utf-8')
+  );
+
+  ipcMain.handle('APP_READ_CLIPBOARD', async () =>
+    clipboard.readText('clipboard')
+  );
+
+  /**
+   * This IPC channel must be mocked when running e2e tests
+   */
+  ipcMain.handle('APP_SHOW_OPEN_DIALOG', async (event, options) => {
+    options.defaultPath = getDialogDefaultPath();
+
+    return await dialog.showOpenDialog(mainWindow, options);
+  });
+
+  /**
+   * This IPC channel must be mocked when running e2e tests
+   */
+  ipcMain.handle('APP_SHOW_SAVE_DIALOG', async (event, options) => {
+    if (!options.defaultPath) {
+      options.defaultPath = getDialogDefaultPath();
+    }
+
+    return await dialog.showSaveDialog(mainWindow, options);
+  });
+
+  ipcMain.handle('APP_BUILD_STORAGE_FILEPATH', (event, name: string) =>
+    pathJoin(getDataPath(), `${name}.json`)
+  );
+
+  ipcMain.handle(
+    'APP_GET_BASE_PATH',
+    (event, filePath: string) => pathParse(filePath).dir
+  );
+
+  ipcMain.handle('APP_REPLACE_FILEPATH_EXTENSION', (event, filePath: string) =>
+    pathFormat({ ...pathParse(filePath), base: '', ext: '.json' })
+  );
+
+  ipcMain.handle('APP_GET_MIME_TYPE', (event, filePath) =>
+    mimeTypeLookup(filePath)
+  );
+
+  ipcMain.handle('APP_GET_FILENAME', (event, filePath) => {
+    const parsedPath = pathParse(filePath);
+
+    return parsedPath.name;
+  });
+
+  ipcMain.handle('APP_GET_HASH', (event, str) =>
+    createHash('sha1').update(str, 'utf-8').digest('hex')
+  );
+
+  ipcMain.handle(
+    'APP_SERVER_GET_PROCESSED_DATABUCKET_VALUE',
+    (event, environmentUuid: string, databucketUuid: string) =>
+      ServerInstance.getProcessedDatabucketValue(
+        environmentUuid,
+        databucketUuid
+      )
+  );
+
+  ipcMain.handle(
+    'APP_START_SERVER',
+    (event, environment: Environment, environmentPath: string) => {
+      new ServerInstance(environment, environmentPath);
+    }
+  );
+
+  ipcMain.handle('APP_STOP_SERVER', (event, uuid: string) => {
+    ServerInstance.stop(uuid);
+  });
+
+  ipcMain.on(
+    'APP_OPEN_FILE',
+    async (event, filePath: string, relativeToFile: string) => {
+      const result = await shell.openPath(
+        buildFilePath(filePath, relativeToFile)
+      );
+
+      if (result) {
+        logError(`Failed to open file in default editor: ${result}`);
+      }
+    }
+  );
+};
+
+/**
+ * Remove all listeners and handlers on the IPC main.
+ * This is mainly used to clear the listener before reactivating a
+ * window on macOS
+ */
+export const clearIPCChannels = () => {
+  IPCMainListenerChannels.forEach((listener) => {
+    ipcMain.removeAllListeners(listener);
+  });
+  IPCMainHandlerChannels.forEach((handler) => {
+    ipcMain.removeHandler(handler);
+  });
+};

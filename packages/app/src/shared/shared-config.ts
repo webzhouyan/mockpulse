@@ -1,0 +1,51 @@
+import { defaultMaxTransactionLogs } from '@mockoon/commons';
+
+const appVersion: string = require('../../package.json').version;
+
+/**
+ * Share config between main and renderer processes
+ * Shouldn't be imported directly, use each Config file instead
+ *
+ * @param options
+ * @returns
+ */
+export const SharedConfig = (options: {
+  websiteUrl: string;
+  defaultApiUrl: string;
+  isWeb?: boolean;
+}) => {
+  const docsUrl = `${options.websiteUrl}docs/latest/`;
+  const proDocsUrl = `${options.websiteUrl}pro/docs/`;
+
+  return {
+    isWeb: options.isWeb,
+    appVersion,
+    remoteConfigDefaults: {
+      dataRefreshInterval: 300_000 // 5 minutes
+    },
+    websiteUrl: options.websiteUrl,
+    defaultApiUrl: options.defaultApiUrl,
+    githubBinaryURL: 'https://github.com/mockoon/mockoon/releases/download/',
+    latestReleaseDataURL: `${options.defaultApiUrl}releases/desktop/stable.json`,
+    changelogMarkdownURL: `${options.websiteUrl}desktop-changelogs-markdown/`,
+    releasePublicURL: `${options.websiteUrl}releases/`,
+    docs: {
+      adminApi: `${docsUrl}admin-api/overview/`,
+      proDeploy: `${proDocsUrl}features/api-mock-deployments/`,
+      cloudDeployCliPull: `${options.websiteUrl}cloud/docs/api-mock-cloud-deployments/#self-host-with-the-cli`
+    },
+    // URLs should not be used directly in desktop app (but there is a redirection for the web app in user service). Instead use the flow methods in the user service
+    appAuthURL: `${options.websiteUrl}app-auth/`,
+    loginURL: `${options.websiteUrl}login/`,
+    accountUrl: `${options.websiteUrl}account/subscription/`,
+    accountAuthenticationUrl: `${options.websiteUrl}account/access-tokens/`,
+    proPlansURL: `${options.websiteUrl}pro/`,
+    maxPromptLength: 500,
+    defaultMaxLogsPerEnvironment: defaultMaxTransactionLogs,
+    maxLogsPerEnvironmentLimit: 1_000,
+    defaultMainMenuSize: 100,
+    defaultSecondaryMenuSize: 200,
+    storageSaveDelay: 1000, // ms
+    fileReWatchDelay: 3000 // ms
+  };
+};

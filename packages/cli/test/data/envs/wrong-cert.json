@@ -1,0 +1,29 @@
+{
+  "uuid": "06d4e2f2-b7a1-4717-a61d-94666816c30f",
+  "lastMigration": 33,
+  "name": "test",
+  "endpointPrefix": "",
+  "latency": 0,
+  "port": 3000,
+  "hostname": "",
+  "routes": [],
+  "proxyMode": false,
+  "proxyHost": "",
+  "proxyRemovePrefix": false,
+  "tlsOptions": {
+    "enabled": true,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "./wrongPath",
+    "keyPath": "./wrongKey",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "cors": true,
+  "data": [],
+  "folders": [],
+  "headers": [],
+  "proxyReqHeaders": [],
+  "proxyResHeaders": [],
+  "callbacks": []
+}

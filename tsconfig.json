@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "downlevelIteration": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "declaration": true,
+    "strict": true,
+    "noImplicitAny": false,
+    "strictPropertyInitialization": false,
+    "noFallthroughCasesInSwitch": true,
+    "strictNullChecks": true,
+    "noImplicitReturns": true,
+    "allowSyntheticDefaultImports": true,
+    "typeRoots": ["node_modules/@types"],
+    "importHelpers": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "isolatedModules": true,
+    "useDefineForClassFields": false,
+    "noImplicitOverride": true,
+    "ignoreDeprecations": "6.0"
+  }
+}

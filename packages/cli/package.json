@@ -1,0 +1,62 @@
+{
+  "name": "@mockoon/cli",
+  "description": "Mockoon's CLI. Deploy your mock APIs anywhere.",
+  "version": "9.9.0",
+  "bin": {
+    "mockoon-cli": "./bin/run.js"
+  },
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint",
+    "test": "glob-bin -c \"node --import tsx --test-concurrency 1 --test\" \"./test/specs/**/*.test.ts\"",
+    "build": "rm -rf dist && tsc -b tsconfig-build.json && oclif manifest"
+  },
+  "main": "./dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "/dist",
+    "/bin",
+    "/oclif.manifest.json"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "oclif": {
+    "commands": "./dist/commands",
+    "hooks": {
+      "init": "./dist/hooks/init"
+    },
+    "bin": "mockoon-cli",
+    "dirname": "cli",
+    "plugins": [
+      "@oclif/plugin-help"
+    ],
+    "topicSeparator": " "
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/webzhouyan/mockoon-local.git"
+  },
+  "bugs": {
+    "url": "https://github.com/webzhouyan/mockoon-local/issues"
+  },
+  "dependencies": {
+    "@mockoon/commons": "9.9.0",
+    "@mockoon/commons-server": "9.9.0",
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@oclif/core": "4.14.0",
+    "@oclif/plugin-help": "6.3.0",
+    "chokidar": "4.0.3",
+    "mustache": "4.2.0",
+    "tslib": "2.8.1",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/mustache": "4.2.6",
+    "eslint-config-oclif": "6.0.179",
+    "oclif": "4.24.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

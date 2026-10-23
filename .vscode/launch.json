@@ -1,0 +1,70 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Desktop: Electron Main process",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/packages/app/",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
+      "windows": {
+        "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
+      },
+      "args": [".", "--remote-debugging-port=8888"],
+      "sourceMaps": true
+    },
+    {
+      "type": "chrome",
+      "request": "attach",
+      "name": "Desktop: Electron Renderer process",
+      "port": 8888,
+      "webRoot": "${workspaceFolder}/packages/app",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "src/renderer/*": "${workspaceFolder}/packages/app/src/renderer/*",
+        "./src/renderer/*": "${workspaceFolder}/packages/app/src/renderer/*",
+        "webpack:///./*": "${workspaceFolder}/*",
+        "webpack:///*": "${workspaceFolder}/*"
+      },
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "CLI",
+      "program": "${workspaceFolder}/packages/cli/bin/dev",
+      "args": [
+        "start",
+        "-d",
+        "cloud://1ef98be6-7f6c-4814-9ff8-a379ff27463b",
+        "--token",
+        "TOKEN",
+        "--port",
+        "3001"
+      ]
+    },
+    {
+      "type": "chrome",
+      "request": "attach",
+      "name": "Web app",
+      "port": 9222,
+      "urlFilter": "http://localhost:3001/*",
+      "webRoot": "${workspaceFolder}/packages/app"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Desktop: All processes",
+      "configurations": [
+        "Desktop: Electron Main process",
+        "Desktop: Electron Renderer process"
+      ]
+    }
+  ]
+}

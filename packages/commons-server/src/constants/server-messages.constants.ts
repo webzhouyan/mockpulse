@@ -1,0 +1,26 @@
+export const ServerMessages = {
+  PORT_ALREADY_USED: 'Port %d is already in use',
+  PORT_INVALID: 'Port %d is invalid or access is denied',
+  INVALID_ROUTE_PATH: 'Invalid route path: %s',
+  HOSTNAME_UNKNOWN: 'Unknown hostname/address provided: %s',
+  HOSTNAME_UNAVAILABLE: 'Provided hostname/address is not available: %s',
+  REQUEST_BODY_PARSE:
+    'Error while trying to parse request body with compatible Content-Type (JSON, XML, form-data): %s',
+  ROUTE_SERVING_ERROR: 'Error while serving the content: %s',
+  ROUTE_FILE_SERVING_ERROR: 'Error while serving the file content: %s',
+  PROXY_ERROR: 'An error occurred while trying to proxy to %s',
+  UNKNOWN_SERVER_ERROR: 'An unknown server error occurred: %s',
+  CERT_FILE_NOT_FOUND: 'Certificate file not found',
+  ROUTE_NO_LONGER_EXISTS: 'This route no longer exists',
+  HEADER_PARSING_ERROR: 'Header parsing error: %s',
+  HEADER_PARSING_ERROR_LIGHT:
+    '-- Header parsing error, see logs for more details --',
+  SERVER_STARTED: 'Server started on port %d',
+  ADMIN_API_AUTH_AUTO_GENERATED_TOKEN: 'Admin API token (auto-generated): %s',
+  SERVER_STOPPED: 'Server stopped',
+  CALLBACK_FILE_ERROR: 'Error while attaching file to callback request: %s',
+  CALLBACK_ERROR: 'Error while executing callback: %s',
+  WS_UNKNOWN_ROUTE: 'No matching route found for websocket: %s',
+  WS_UNSUPPORTED_CONTENT: 'Unsupported content received from websocket: %s',
+  WS_SERVING_ERROR: 'Web socket serving error: %s'
+};

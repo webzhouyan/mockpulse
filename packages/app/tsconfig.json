@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "outDir": "./dist/out-tsc",
+    "declaration": false,
+    "strict": false,
+    "strictNullChecks": false,
+    "module": "preserve",
+    "resolveJsonModule": true,
+    "target": "ES2022",
+    "lib": ["es2022", "dom"],
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": ["src/renderer/*"],
+      "src/*": ["src/*"]
+    }
+  }
+}
