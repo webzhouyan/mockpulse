@@ -216,34 +216,41 @@ export const RoutesView: React.FC = () => {
         {/* Unified Address Bar Box */}
         <Box
           sx={{
+            height: 36,
+            minHeight: 36,
             display: 'flex',
             alignItems: 'center',
-            borderRadius: 2,
+            borderRadius: 1.5,
             border: `1px solid ${theme.palette.divider}`,
             backgroundColor:
               theme.palette.mode === 'light' ? '#ffffff' : alpha(theme.palette.background.paper, 0.6),
+            px: 0.8,
+            gap: 0.8,
             transition: 'all 0.2s ease',
             '&:focus-within': {
               borderColor: theme.palette.primary.main,
               boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.18)}`
-            },
-            overflow: 'hidden'
+            }
           }}
         >
-          {/* Method Addon on Left (Badge or Select) */}
+          {/* Method Addon on Left (Pill Badge or Pill Select) */}
           {activeRoute.type === 'crud' ? (
             <Box
               sx={{
-                px: 1.2,
-                py: 0.5,
+                height: 24,
+                px: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 1,
                 backgroundColor: '#8b5cf6',
                 color: '#ffffff',
                 fontWeight: 800,
                 fontSize: '0.72rem',
                 fontFamily: "'Fira Code', monospace",
-                flexShrink: 0,
                 letterSpacing: '0.02em',
-                userSelect: 'none'
+                userSelect: 'none',
+                flexShrink: 0
               }}
             >
               CRUD
@@ -251,16 +258,20 @@ export const RoutesView: React.FC = () => {
           ) : activeRoute.type === 'ws' ? (
             <Box
               sx={{
-                px: 1.2,
-                py: 0.5,
+                height: 24,
+                px: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 1,
                 backgroundColor: '#06b6d4',
                 color: '#ffffff',
                 fontWeight: 800,
                 fontSize: '0.72rem',
                 fontFamily: "'Fira Code', monospace",
-                flexShrink: 0,
                 letterSpacing: '0.02em',
-                userSelect: 'none'
+                userSelect: 'none',
+                flexShrink: 0
               }}
             >
               WS
@@ -272,42 +283,31 @@ export const RoutesView: React.FC = () => {
               variant="standard"
               disableUnderline
               sx={{
-                width: 96,
+                height: 24,
+                minWidth: 72,
                 flexShrink: 0,
-                height: 32,
-                backgroundColor:
-                  theme.palette.mode === 'light'
-                    ? '#f1f5f9'
-                    : alpha(theme.palette.background.default, 0.7),
-                borderRight: `1px solid ${theme.palette.divider}`,
+                borderRadius: 1,
+                backgroundColor: (METHOD_COLORS[activeRoute.method.toLowerCase()] || METHOD_COLORS.get).bg,
+                color: '#ffffff',
                 fontSize: '0.72rem',
-                fontWeight: 700,
+                fontWeight: 800,
                 fontFamily: "'Fira Code', monospace",
                 '& .MuiSelect-select': {
-                  py: 0.4,
-                  px: 1,
+                  py: 0,
+                  pl: 0.9,
+                  pr: '22px !important',
+                  height: '24px !important',
                   display: 'flex',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  color: '#ffffff',
+                  fontWeight: 800,
+                  textTransform: 'uppercase'
+                },
+                '& .MuiSelect-icon': {
+                  color: '#ffffff',
+                  fontSize: 16,
+                  right: 2
                 }
-              }}
-              renderValue={(val) => {
-                const cfg = METHOD_COLORS[val.toLowerCase()] || METHOD_COLORS.get;
-                return (
-                  <Box
-                    sx={{
-                      px: 0.8,
-                      py: 0.1,
-                      borderRadius: 1,
-                      backgroundColor: cfg.bg,
-                      color: cfg.text,
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      fontSize: '0.68rem'
-                    }}
-                  >
-                    {val}
-                  </Box>
-                );
               }}
             >
               {HTTP_METHODS.map((m) => {
@@ -344,12 +344,12 @@ export const RoutesView: React.FC = () => {
           {/* Slash Prefix */}
           <Typography
             sx={{
-              px: 1,
               fontFamily: "'Fira Code', monospace",
-              fontSize: '0.9rem',
+              fontSize: '0.95rem',
               fontWeight: 700,
               color: theme.palette.text.disabled,
-              userSelect: 'none'
+              userSelect: 'none',
+              lineHeight: 1
             }}
           >
             /
@@ -362,9 +362,8 @@ export const RoutesView: React.FC = () => {
             onChange={(e) => updateRoute((r) => ({ ...r, endpoint: e.target.value.replace(/^\//, '') }))}
             sx={{
               flex: 1,
-              py: 0.4,
-              pr: 1,
-              fontSize: '0.85rem',
+              height: '100%',
+              fontSize: '0.86rem',
               fontFamily: "'Fira Code', monospace",
               fontWeight: 600
             }}
