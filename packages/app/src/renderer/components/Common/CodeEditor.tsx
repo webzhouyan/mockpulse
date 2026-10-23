@@ -211,11 +211,9 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             fontFamily: "'Fira Code', 'JetBrains Mono', Consolas, monospace"
           },
           '& .cm-gutters': {
-            borderRight: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
-            backgroundColor:
-              theme.palette.mode === 'light'
-                ? alpha(theme.palette.grey[200], 0.3)
-                : alpha(theme.palette.background.default, 0.4)
+            border: 'none !important',
+            borderRight: 'none !important',
+            backgroundColor: 'transparent !important'
           }
         }}
       >
