@@ -74,7 +74,7 @@ export const HeadersView: React.FC = () => {
       });
       return { ...env, headers: current };
     });
-    setFeedback('已成功添加 / 补全 CORS 跨域响应头！');
+    setFeedback(t.headers.corsSuccess || '已成功添加 / 补全 CORS 跨域响应头！');
   };
 
   // Reset to default 4 headers
@@ -83,7 +83,7 @@ export const HeadersView: React.FC = () => {
       ...env,
       headers: [...DEFAULT_GLOBAL_HEADERS]
     }));
-    setFeedback('已重置为原版默认全局响应头！');
+    setFeedback(t.headers.resetSuccess || '已重置为原版默认全局响应头！');
   };
 
   return (
@@ -108,7 +108,7 @@ export const HeadersView: React.FC = () => {
             onClick={handleAddCORSHeaders}
             sx={{ fontSize: '0.78rem', textTransform: 'none' }}
           >
-            添加 CORS 跨域头 (add CORS headers)
+            {t.headers.addCorsHeaders || '添加 CORS 跨域头 (add CORS headers)'}
           </Button>
 
           <Button
@@ -118,7 +118,7 @@ export const HeadersView: React.FC = () => {
             onClick={handleResetDefault}
             sx={{ fontSize: '0.78rem' }}
           >
-            重置为默认
+            {t.headers.resetDefault || '重置为默认'}
           </Button>
 
           <Button

@@ -250,7 +250,7 @@ export const DataBucketsView: React.FC = () => {
                 onClick={handleFormat}
                 sx={{ fontSize: '0.75rem', py: 0.2 }}
               >
-                格式化
+                {t.routes.formatJson || '格式化'}
               </Button>
               <Button
                 size="small"
@@ -259,7 +259,7 @@ export const DataBucketsView: React.FC = () => {
                 onClick={handleCopy}
                 sx={{ fontSize: '0.75rem', py: 0.2 }}
               >
-                复制
+                {t.common.copy || '复制'}
               </Button>
             </Box>
           </Box>
@@ -297,7 +297,7 @@ export const DataBucketsView: React.FC = () => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert severity="success" sx={{ width: '100%', py: 0.5, px: 2, fontSize: '0.85rem' }}>
-          数据桶模板已成功复制到剪贴板！
+          {t.common.copied || '已复制到剪贴板'}
         </Alert>
       </Snackbar>
     </Box>

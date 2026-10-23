@@ -58,7 +58,7 @@ export const EnvSettingsView: React.FC = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <DnsRoundedIcon sx={{ color: theme.palette.primary.main, fontSize: 20 }} />
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-              网络与监听配置
+              {t.envSettings.sectionNetwork || '网络与监听配置'}
             </Typography>
           </Box>
 
@@ -149,7 +149,7 @@ export const EnvSettingsView: React.FC = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <SpeedRoundedIcon sx={{ color: theme.palette.warning.main, fontSize: 20 }} />
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-              网络模拟与延迟
+              {t.envSettings.sectionPerformance || '网络模拟与延迟'}
             </Typography>
           </Box>
 
@@ -188,7 +188,7 @@ export const EnvSettingsView: React.FC = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <SecurityRoundedIcon sx={{ color: theme.palette.success.main, fontSize: 20 }} />
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-              安全与跨域策略 (CORS & HTTPS)
+              {t.envSettings.sectionSecurity || '安全与跨域策略 (CORS & HTTPS)'}
             </Typography>
           </Box>
 

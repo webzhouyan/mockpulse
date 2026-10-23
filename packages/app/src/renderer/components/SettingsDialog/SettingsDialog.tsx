@@ -250,7 +250,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2 }}>
             <StorageRoundedIcon sx={{ fontSize: 18, color: theme.palette.primary.main }} />
             <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.85rem' }}>
-              存储与日志
+              {t.settings.storageAndLogs || '存储与日志'}
             </Typography>
           </Box>
 
@@ -309,7 +309,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
                   }
                 }}
               >
-                [ 📁 打开本地数据存储目录 ]
+                {t.settings.storageFolder}
               </Button>
             </Box>
           </Box>
@@ -343,7 +343,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
             }
           }}
         >
-          关闭设置
+          {t.settings.close || '关闭'}
         </Button>
       </DialogActions>
     </Dialog>

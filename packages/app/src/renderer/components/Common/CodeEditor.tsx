@@ -21,6 +21,7 @@ import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import FullscreenRoundedIcon from '@mui/icons-material/FullscreenRounded';
 import FullscreenExitRoundedIcon from '@mui/icons-material/FullscreenExitRounded';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
+import { useI18n } from '../../i18n';
 
 interface CodeEditorProps {
   value: string;
@@ -39,6 +40,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   placeholder = '{\n  "status": "ok"\n}'
 }) => {
   const theme = useTheme();
+  const { t, locale } = useI18n();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const gutterRef = useRef<HTMLDivElement>(null);
 
@@ -128,37 +130,46 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
               }}
             >
               <MenuItem value="INLINE" sx={{ fontSize: '0.75rem' }}>
-                自定义内容 (Inline JSON/Text)
+                {t.routes.bodyInline || 'Inline Content'}
               </MenuItem>
               <MenuItem value="FILE" sx={{ fontSize: '0.75rem' }}>
-                文件响应 (File)
+                {t.routes.bodyFile || 'File Response'}
               </MenuItem>
               <MenuItem value="DATABUCKET" sx={{ fontSize: '0.75rem' }}>
-                数据桶生成 (Data Bucket)
+                {t.routes.bodyDatabucket || 'Data Bucket'}
               </MenuItem>
             </Select>
           )}
 
           <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '0.7rem' }}>
-            {lineCount} 行 · {value ? (new Blob([value]).size / 1024).toFixed(1) : 0} KB
+            {lineCount} {locale === 'en' ? 'lines' : '行'} · {value ? (new Blob([value]).size / 1024).toFixed(1) : 0} KB
           </Typography>
         </Box>
 
         {/* Right: Quick action buttons */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <Tooltip title="格式化 JSON (Format)" arrow>
+          <Tooltip title={t.routes.formatJson || 'Format JSON'} arrow>
             <IconButton size="small" onClick={handleFormat} sx={{ width: 26, height: 26 }}>
               <AutoFixHighRoundedIcon sx={{ fontSize: 15 }} />
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="复制内容 (Copy)" arrow>
+          <Tooltip title={t.common.copy || 'Copy'} arrow>
             <IconButton size="small" onClick={handleCopy} sx={{ width: 26, height: 26 }}>
               <ContentCopyRoundedIcon sx={{ fontSize: 14 }} />
             </IconButton>
           </Tooltip>
 
-          <Tooltip title={isFullscreen ? '退出全屏' : '全屏编辑 (Fullscreen)'} arrow>
+          <Tooltip
+            title={
+              isFullscreen
+                ? locale === 'en'
+                  ? 'Exit Fullscreen'
+                  : '退出全屏'
+                : t.routes.toggleFullscreen || 'Fullscreen'
+            }
+            arrow
+          >
             <IconButton size="small" onClick={() => setIsFullscreen(!isFullscreen)} sx={{ width: 26, height: 26 }}>
               {isFullscreen ? (
                 <FullscreenExitRoundedIcon sx={{ fontSize: 16 }} />

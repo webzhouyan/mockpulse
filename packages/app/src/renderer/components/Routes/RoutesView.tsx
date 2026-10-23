@@ -374,7 +374,10 @@ export const RoutesView: React.FC = () => {
         {/* Documentation / Alias Hint Input below address bar */}
         <Box sx={{ mt: 0.6, px: 0.4, display: 'flex', alignItems: 'center' }}>
           <InputBase
-            placeholder="添加接口文档描述 / 别名（例如：用户登录鉴权、获取商品列表）"
+            placeholder={
+              t.routes.docPlaceholder ||
+              '添加接口文档描述 / 别名（例如：用户登录鉴权、获取商品列表）'
+            }
             value={activeRoute.documentation || ''}
             onChange={(e) => updateRoute((r) => ({ ...r, documentation: e.target.value }))}
             sx={{
@@ -438,7 +441,7 @@ export const RoutesView: React.FC = () => {
           ))}
         </Tabs>
 
-        <Box sx={{ display: 'flex', gap: 0.4, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 0.4, alignItems: 'center', flexShrink: 0 }}>
           <Tooltip title={t.routes.addResponse} arrow>
             <IconButton size="small" onClick={handleAddResponse} sx={{ width: 26, height: 26 }}>
               <AddRoundedIcon sx={{ fontSize: 16 }} />
@@ -454,7 +457,7 @@ export const RoutesView: React.FC = () => {
         </Box>
       </Box>
 
-      {/* 3. Compact Branch Parameters Row (Unified in 1 Row) */}
+      {/* 3. Compact Branch Parameters Row (Unified in 1 Row, STRICT nowrap) */}
       <Box
         sx={{
           height: 38,
@@ -463,6 +466,8 @@ export const RoutesView: React.FC = () => {
           display: 'flex',
           gap: 1.5,
           alignItems: 'center',
+          flexWrap: 'nowrap',
+          overflowX: 'auto',
           borderBottom: `1px solid ${theme.palette.divider}`,
           backgroundColor:
             theme.palette.mode === 'light'
@@ -471,9 +476,18 @@ export const RoutesView: React.FC = () => {
         }}
       >
         {/* Status Code */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, fontSize: '0.72rem' }}>
-            状态码:
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexShrink: 0 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: theme.palette.text.secondary,
+              fontWeight: 600,
+              fontSize: '0.72rem',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
+            }}
+          >
+            {t.routes.statusLabel || '状态码:'}
           </Typography>
           <Select
             size="small"
@@ -497,9 +511,18 @@ export const RoutesView: React.FC = () => {
         </Box>
 
         {/* Latency */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, fontSize: '0.72rem' }}>
-            延迟:
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexShrink: 0 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: theme.palette.text.secondary,
+              fontWeight: 600,
+              fontSize: '0.72rem',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
+            }}
+          >
+            {t.routes.latencyLabel || '延迟:'}
           </Typography>
           <TextField
             size="small"
@@ -516,19 +539,36 @@ export const RoutesView: React.FC = () => {
               }
             }}
           />
-          <Typography variant="caption" sx={{ color: theme.palette.text.disabled, fontSize: '0.68rem' }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: theme.palette.text.disabled,
+              fontSize: '0.68rem',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
+            }}
+          >
             ms
           </Typography>
         </Box>
 
         {/* Branch Label */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flex: 1 }}>
-          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, fontSize: '0.72rem' }}>
-            标签:
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flex: 1, minWidth: 140 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: theme.palette.text.secondary,
+              fontWeight: 600,
+              fontSize: '0.72rem',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
+            }}
+          >
+            {t.routes.branchLabel || '标签:'}
           </Typography>
           <TextField
             size="small"
-            placeholder="分支说明 (如 200 OK)"
+            placeholder={t.routes.labelPlaceholder || '分支说明 (如 200 OK)'}
             value={activeResponse.label || ''}
             onChange={(e) => updateActiveResponse((resp) => ({ ...resp, label: e.target.value }))}
             InputProps={{
@@ -538,7 +578,7 @@ export const RoutesView: React.FC = () => {
                 borderRadius: 1
               }
             }}
-            sx={{ flex: 1, minWidth: 150 }}
+            sx={{ flex: 1, minWidth: 100 }}
           />
         </Box>
 
@@ -561,11 +601,19 @@ export const RoutesView: React.FC = () => {
             />
           }
           label={
-            <Typography variant="caption" sx={{ fontSize: '0.72rem', fontWeight: 600 }}>
-              默认响应
+            <Typography
+              variant="caption"
+              sx={{
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                flexShrink: 0
+              }}
+            >
+              {t.routes.defaultResponse || '默认响应'}
             </Typography>
           }
-          sx={{ mr: 0 }}
+          sx={{ mr: 0, flexShrink: 0, whiteSpace: 'nowrap' }}
         />
       </Box>
 
@@ -598,12 +646,12 @@ export const RoutesView: React.FC = () => {
           <Tab
             icon={<CodeRoundedIcon sx={{ fontSize: 14 }} />}
             iconPosition="start"
-            label="响应内容"
+            label={t.routes.bodyTab || '响应内容'}
           />
           <Tab
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                <span>响应头</span>
+                <span>{t.routes.headersTab || '响应头'}</span>
                 <Box
                   sx={{
                     px: 0.6,
@@ -626,7 +674,7 @@ export const RoutesView: React.FC = () => {
           <Tab
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                <span>规则条件</span>
+                <span>{t.routes.rulesTab || '规则条件'}</span>
                 <Box
                   sx={{
                     px: 0.6,
@@ -660,7 +708,7 @@ export const RoutesView: React.FC = () => {
                 onChange={(val) => updateActiveResponse((resp) => ({ ...resp, body: val }))}
                 bodyType={activeResponse.bodyType}
                 onBodyTypeChange={(type) => updateActiveResponse((resp) => ({ ...resp, bodyType: type }))}
-                placeholder="在此输入响应体内容 (JSON, XML, 文本)..."
+                placeholder={t.routes.bodyPlaceholder || '在此输入响应体内容 (JSON, XML, 文本)...'}
               />
             )}
 
@@ -678,7 +726,7 @@ export const RoutesView: React.FC = () => {
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                    配置文件响应 (File Response)
+                    {t.routes.configFileResponse || '配置文件响应 (File Response)'}
                   </Typography>
 
                   <Button
@@ -687,7 +735,7 @@ export const RoutesView: React.FC = () => {
                     onClick={() => updateActiveResponse((resp) => ({ ...resp, bodyType: 'INLINE' }))}
                     sx={{ fontSize: '0.75rem' }}
                   >
-                    切换回自定义内容 (Inline)
+                    {t.routes.switchToInline || '切换回自定义内容 (Inline)'}
                   </Button>
                 </Box>
 
@@ -708,11 +756,11 @@ export const RoutesView: React.FC = () => {
                     onClick={handleBrowseFile}
                     sx={{ whiteSpace: 'nowrap', py: 0.8 }}
                   >
-                    浏览选择
+                    {t.routes.browseFile || '浏览选择'}
                   </Button>
 
                   {activeResponse.filePath && (
-                    <Tooltip title="在系统访达 / 文件夹中定位该文件" arrow>
+                    <Tooltip title={t.routes.locateFile || '在系统访达 / 文件夹中定位该文件'} arrow>
                       <IconButton
                         size="small"
                         onClick={() => apiService.showFile(activeResponse.filePath || '')}
@@ -738,7 +786,7 @@ export const RoutesView: React.FC = () => {
                         {t.routes.sendFileAsBody}
                       </Typography>
                       <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                        开启后将直接以文件原始内容和推断的二进制/MIME 类型流式发送。
+                        {t.routes.sendFileAsBodyDesc || '开启后将直接以文件原始内容和推断的二进制/MIME 类型流式发送。'}
                       </Typography>
                     </Box>
                   }
@@ -751,7 +799,7 @@ export const RoutesView: React.FC = () => {
               <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                    绑定数据桶生成 (Data Bucket)
+                    {t.routes.bindDataBucket || '绑定数据桶生成 (Data Bucket)'}
                   </Typography>
 
                   <Button
@@ -760,7 +808,7 @@ export const RoutesView: React.FC = () => {
                     onClick={() => updateActiveResponse((resp) => ({ ...resp, bodyType: 'INLINE' }))}
                     sx={{ fontSize: '0.75rem' }}
                   >
-                    切换回自定义内容 (Inline)
+                    {t.routes.switchToInline || '切换回自定义内容 (Inline)'}
                   </Button>
                 </Box>
 
@@ -794,7 +842,7 @@ export const RoutesView: React.FC = () => {
                 onClick={handleAddHeader}
                 sx={{ fontSize: '0.75rem', py: 0.3 }}
               >
-                添加响应头
+                {t.routes.addHeader || '添加响应头'}
               </Button>
             </Box>
 
@@ -804,7 +852,7 @@ export const RoutesView: React.FC = () => {
                   <TableRow sx={{ backgroundColor: alpha(theme.palette.text.primary, 0.02) }}>
                     <TableCell sx={{ fontWeight: 600, width: '45%' }}>Header Name</TableCell>
                     <TableCell sx={{ fontWeight: 600, width: '45%' }}>Header Value</TableCell>
-                    <TableCell width={50} align="center">操作</TableCell>
+                    <TableCell width={50} align="center">{t.common.actions || '操作'}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -875,7 +923,7 @@ export const RoutesView: React.FC = () => {
                 onClick={handleAddRule}
                 sx={{ fontSize: '0.75rem', py: 0.3 }}
               >
-                添加规则条件
+                {t.routes.addRule || '添加规则条件'}
               </Button>
             </Box>
 
@@ -913,7 +961,7 @@ export const RoutesView: React.FC = () => {
 
                   <TextField
                     size="small"
-                    placeholder="属性名 (Property)"
+                    placeholder={t.routes.ruleProperty || '属性名 (Property)'}
                     value={rule.property}
                     onChange={(e) => {
                       const property = e.target.value;
@@ -936,17 +984,17 @@ export const RoutesView: React.FC = () => {
                         rules: (resp.rules || []).map((r, i) => (i === idx ? { ...r, operator } : r))
                       }));
                     }}
-                    sx={{ height: 28, fontSize: '0.75rem', width: 100 }}
+                    sx={{ height: 28, fontSize: '0.75rem', width: 110 }}
                   >
-                    <MenuItem value="equals">等于 (=)</MenuItem>
-                    <MenuItem value="regex_match">正则匹配</MenuItem>
-                    <MenuItem value="null">为空 (Null)</MenuItem>
-                    <MenuItem value="empty_array">空数组</MenuItem>
+                    <MenuItem value="equals">{t.routes.ruleOperatorEquals || '等于 (=)'}</MenuItem>
+                    <MenuItem value="regex_match">{t.routes.ruleOperatorRegex || '正则匹配'}</MenuItem>
+                    <MenuItem value="null">{t.routes.ruleOperatorNull || '为空 (Null)'}</MenuItem>
+                    <MenuItem value="empty_array">{t.routes.ruleOperatorEmptyArray || '空数组'}</MenuItem>
                   </Select>
 
                   <TextField
                     size="small"
-                    placeholder="匹配值 (Value)"
+                    placeholder={t.routes.ruleValue || '匹配值 (Value)'}
                     value={rule.value}
                     onChange={(e) => {
                       const value = e.target.value;

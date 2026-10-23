@@ -25,7 +25,7 @@ import {
 } from '@mui/material';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import ArrowDropDownRoundedIcon from '@mui/icons-material/ArrowDropDownRounded';
+import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
@@ -407,7 +407,7 @@ export const EnvironmentNav: React.FC = () => {
             }}
           >
             {/* Duplicate Route Button */}
-            <Tooltip title="复制路由 (Duplicate)" arrow>
+            <Tooltip title={t.nav.duplicateRoute} arrow>
               <IconButton
                 size="small"
                 onClick={(e) => {
@@ -425,7 +425,7 @@ export const EnvironmentNav: React.FC = () => {
             </Tooltip>
 
             {/* Delete Route Button */}
-            <Tooltip title="删除路由 (Delete)" arrow>
+            <Tooltip title={t.nav.deleteRoute} arrow>
               <IconButton
                 size="small"
                 onClick={(e) => {
@@ -644,7 +644,7 @@ export const EnvironmentNav: React.FC = () => {
               transition: 'opacity 0.2s'
             }}
           >
-            <Tooltip title="重命名文件夹" arrow>
+            <Tooltip title={t.nav.renameFolder} arrow>
               <IconButton
                 size="small"
                 onClick={(e) => {
@@ -657,7 +657,7 @@ export const EnvironmentNav: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title="删除文件夹" arrow>
+            <Tooltip title={t.nav.deleteFolder} arrow>
               <IconButton
                 size="small"
                 onClick={(e) => {
@@ -714,7 +714,7 @@ export const EnvironmentNav: React.FC = () => {
                     fontWeight: isDropInside ? 600 : 400
                   }}
                 >
-                  {isDropInside ? '释放以移入此文件夹' : '(空文件夹，可直接拖入接口)'}
+                  {isDropInside ? t.nav.dragDropRelease : t.nav.emptyFolder}
                 </Typography>
               </Box>
             )}
@@ -758,7 +758,7 @@ export const EnvironmentNav: React.FC = () => {
         <TextField
           fullWidth
           size="small"
-          placeholder="搜索接口路径、文档..."
+          placeholder={t.nav.searchPlaceholder}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           InputProps={{
@@ -793,7 +793,7 @@ export const EnvironmentNav: React.FC = () => {
             }
           }}
         >
-          <Tooltip title="一键新增 HTTP 接口" arrow>
+          <Tooltip title={t.nav.quickAddHttp} arrow>
             <Box
               onClick={() => addRoute('http')}
               sx={{
@@ -811,14 +811,14 @@ export const EnvironmentNav: React.FC = () => {
             </Box>
           </Tooltip>
 
-          <Tooltip title="更多类型：CRUD / WebSocket / 文件夹" arrow>
+          <Tooltip title={t.nav.moreTypes} arrow>
             <Box
               onClick={(e) => setAddMenuAnchor(e.currentTarget)}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: 18,
+                width: 24,
                 height: 32,
                 cursor: 'pointer',
                 borderLeft: `1px solid ${alpha('#ffffff', 0.2)}`,
@@ -826,7 +826,7 @@ export const EnvironmentNav: React.FC = () => {
                 '&:hover': { backgroundColor: alpha('#ffffff', 0.15) }
               }}
             >
-              <ArrowDropDownRoundedIcon sx={{ fontSize: 16 }} />
+              <KeyboardArrowDownRoundedIcon sx={{ fontSize: 20 }} />
             </Box>
           </Tooltip>
         </Box>
@@ -856,7 +856,7 @@ export const EnvironmentNav: React.FC = () => {
           >
             <ListItemIcon sx={{ fontSize: 16 }}>🌐</ListItemIcon>
             <ListItemText
-              primary="HTTP 路由 (HTTP route)"
+              primary={t.nav.addHttpRoute}
               primaryTypographyProps={{ fontSize: '0.8rem', fontWeight: 600 }}
             />
           </MenuItem>
@@ -870,7 +870,7 @@ export const EnvironmentNav: React.FC = () => {
           >
             <ListItemIcon sx={{ fontSize: 16 }}>⚙️</ListItemIcon>
             <ListItemText
-              primary="CRUD 路由 (CRUD route)"
+              primary={t.nav.addCrudRoute}
               primaryTypographyProps={{ fontSize: '0.8rem', fontWeight: 600 }}
             />
           </MenuItem>
@@ -884,7 +884,7 @@ export const EnvironmentNav: React.FC = () => {
           >
             <ListItemIcon sx={{ fontSize: 16 }}>🔌</ListItemIcon>
             <ListItemText
-              primary="WebSocket 路由 (WebSocket)"
+              primary={t.nav.addWsRoute}
               primaryTypographyProps={{ fontSize: '0.8rem', fontWeight: 600 }}
             />
           </MenuItem>
@@ -900,7 +900,7 @@ export const EnvironmentNav: React.FC = () => {
           >
             <ListItemIcon sx={{ fontSize: 16 }}>🗂️</ListItemIcon>
             <ListItemText
-              primary="新建文件夹 (Folder)"
+              primary={t.nav.addFolder}
               primaryTypographyProps={{ fontSize: '0.8rem', fontWeight: 600 }}
             />
           </MenuItem>
@@ -939,7 +939,7 @@ export const EnvironmentNav: React.FC = () => {
                 letterSpacing: '-0.01em'
               }}
             >
-              环境全局配置
+              {t.nav.globalConfig}
             </Typography>
           </Box>
 
@@ -960,7 +960,7 @@ export const EnvironmentNav: React.FC = () => {
                 >
                   <ArticleOutlinedIcon sx={{ fontSize: 15, mr: 1, color: theme.palette.text.secondary }} />
                   <ListItemText
-                    primary="请求日志"
+                    primary={t.nav.logs}
                     primaryTypographyProps={{
                       fontSize: '0.74rem',
                       fontWeight: activeTabKey === 'logs' ? 600 : 500,
@@ -999,7 +999,7 @@ export const EnvironmentNav: React.FC = () => {
                 >
                   <CallSplitRoundedIcon sx={{ fontSize: 15, mr: 1, color: theme.palette.text.secondary }} />
                   <ListItemText
-                    primary="回调 Webhook"
+                    primary={t.nav.callbacks}
                     primaryTypographyProps={{
                       fontSize: '0.74rem',
                       fontWeight: activeTabKey === 'callbacks' ? 600 : 500,
@@ -1023,7 +1023,7 @@ export const EnvironmentNav: React.FC = () => {
                 >
                   <MailOutlineRoundedIcon sx={{ fontSize: 15, mr: 1, color: theme.palette.text.secondary }} />
                   <ListItemText
-                    primary="全局请求头"
+                    primary={t.nav.headers}
                     primaryTypographyProps={{
                       fontSize: '0.74rem',
                       fontWeight: activeTabKey === 'headers' ? 600 : 500,
@@ -1047,7 +1047,7 @@ export const EnvironmentNav: React.FC = () => {
                 >
                   <StorageRoundedIcon sx={{ fontSize: 15, mr: 1, color: theme.palette.text.secondary }} />
                   <ListItemText
-                    primary="数据桶"
+                    primary={t.nav.dataBuckets}
                     primaryTypographyProps={{
                       fontSize: '0.74rem',
                       fontWeight: activeTabKey === 'dataBuckets' ? 600 : 500,
@@ -1071,7 +1071,7 @@ export const EnvironmentNav: React.FC = () => {
                 >
                   <SwapHorizRoundedIcon sx={{ fontSize: 15, mr: 1, color: theme.palette.text.secondary }} />
                   <ListItemText
-                    primary="代理转发"
+                    primary={t.nav.proxy}
                     primaryTypographyProps={{
                       fontSize: '0.74rem',
                       fontWeight: activeTabKey === 'proxy' ? 600 : 500,
@@ -1095,7 +1095,7 @@ export const EnvironmentNav: React.FC = () => {
                 >
                   <SettingsOutlinedIcon sx={{ fontSize: 15, mr: 1, color: theme.palette.text.secondary }} />
                   <ListItemText
-                    primary="环境设置"
+                    primary={t.nav.settings}
                     primaryTypographyProps={{
                       fontSize: '0.74rem',
                       fontWeight: activeTabKey === 'settings' ? 600 : 500,
@@ -1139,7 +1139,7 @@ export const EnvironmentNav: React.FC = () => {
                 flex: 1
               }}
             >
-              路由接口 ({routes.length})
+              {t.nav.routes} ({routes.length})
             </Typography>
           </Box>
 
@@ -1171,7 +1171,7 @@ export const EnvironmentNav: React.FC = () => {
         PaperProps={{ sx: { borderRadius: 2 } }}
       >
         <DialogTitle sx={{ py: 1.5, fontSize: '0.9rem', fontWeight: 700 }}>
-          重命名文件夹
+          {t.nav.renameFolder}
         </DialogTitle>
         <DialogContent sx={{ py: 1 }}>
           <TextField
@@ -1191,7 +1191,7 @@ export const EnvironmentNav: React.FC = () => {
         </DialogContent>
         <DialogActions sx={{ p: 1.5 }}>
           <Button size="small" onClick={() => setEditingFolder(null)}>
-            取消
+            {t.common.cancel}
           </Button>
           <Button
             size="small"
@@ -1203,7 +1203,7 @@ export const EnvironmentNav: React.FC = () => {
               }
             }}
           >
-            保存
+            {t.common.save}
           </Button>
         </DialogActions>
       </Dialog>

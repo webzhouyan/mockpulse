@@ -134,10 +134,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings }) => {
           }}
         >
           {isStarting
-            ? '启动中...'
+            ? t.app.starting
             : isRunning
-            ? `停止服务 (${activeEnvironment.port})`
-            : '启动服务'}
+            ? `${t.app.stopServer} (${activeEnvironment.port})`
+            : t.app.startServer}
         </Button>
 
         {/* Theme mode toggle */}
