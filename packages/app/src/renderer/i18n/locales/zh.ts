@@ -120,7 +120,7 @@ export const zh = {
     title: '全局响应头 (Global Headers)',
     subtitle: '此环境中所有路由接口的响应都会自动附带以下响应头。',
     addHeader: '添加全局响应头',
-    addCorsHeaders: '添加 CORS 跨域头 (add CORS headers)',
+    addCorsHeaders: '添加 CORS 跨域头',
     resetDefault: '重置为默认',
     corsSuccess: '已成功添加 / 补全 CORS 跨域响应头！',
     resetSuccess: '已重置为原版默认全局响应头！',

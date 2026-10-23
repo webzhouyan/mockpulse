@@ -139,6 +139,20 @@ export const getAppTheme = (
           body: {
             backgroundColor: bgDefault,
             color: isLight ? '#0f172a' : '#f8fafc'
+          },
+          '*::-webkit-scrollbar': {
+            width: '4px',
+            height: '4px'
+          },
+          '*::-webkit-scrollbar-track': {
+            backgroundColor: 'transparent'
+          },
+          '*::-webkit-scrollbar-thumb': {
+            backgroundColor: isLight ? 'rgba(0, 0, 0, 0.16)' : 'rgba(255, 255, 255, 0.18)',
+            borderRadius: '4px',
+            '&:hover': {
+              backgroundColor: isLight ? 'rgba(0, 0, 0, 0.32)' : 'rgba(255, 255, 255, 0.36)'
+            }
           }
         }
       },

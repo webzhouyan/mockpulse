@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -23,7 +23,9 @@ import {
   TableBody,
   alpha,
   useTheme,
-  InputBase
+  InputBase,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
@@ -31,6 +33,7 @@ import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import CodeRoundedIcon from '@mui/icons-material/CodeRounded';
 import FolderOpenRoundedIcon from '@mui/icons-material/FolderOpenRounded';
 import TravelExploreRoundedIcon from '@mui/icons-material/TravelExploreRounded';
+import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import { Route, RouteResponse, ResponseRule } from '@mockoon/commons';
 import { useApp } from '../../store/AppContext';
 import { useI18n } from '../../i18n';
@@ -58,7 +61,7 @@ const METHOD_COLORS: Record<string, { bg: string; text: string }> = {
 
 export const RoutesView: React.FC = () => {
   const theme = useTheme();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const {
     activeEnvironment,
     updateActiveEnvironment,
@@ -67,6 +70,7 @@ export const RoutesView: React.FC = () => {
 
   const [selectedResponseIndex, setSelectedResponseIndex] = useState(0);
   const [responseSubTab, setResponseSubTab] = useState(0); // 0: Body, 1: Headers, 2: Rules
+  const [copiedSnackbar, setCopiedSnackbar] = useState(false);
 
   const routes = activeEnvironment?.routes || [];
   const activeRoute: Route | null =
@@ -190,6 +194,16 @@ export const RoutesView: React.FC = () => {
   const methodCfg = METHOD_COLORS[activeRoute.method.toLowerCase()] || METHOD_COLORS.get;
   const cleanEndpoint = activeRoute.endpoint.replace(/^\//, '');
 
+  const fullRouteUrl = useMemo(() => {
+    if (!activeEnvironment) return '';
+    const protocol = activeEnvironment.tlsOptions?.enabled ? 'https' : 'http';
+    const hostname = activeEnvironment.hostname || 'localhost';
+    const port = activeEnvironment.port || 3000;
+    const prefix = (activeEnvironment.endpointPrefix || '').replace(/^\/|\/$/g, '');
+    const ep = cleanEndpoint.replace(/^\//, '');
+    return `${protocol}://${hostname}:${port}/${prefix ? prefix + '/' : ''}${ep}`;
+  }, [activeEnvironment, cleanEndpoint]);
+
   return (
     <Box
       sx={{
@@ -282,6 +296,7 @@ export const RoutesView: React.FC = () => {
               onChange={(e) => updateRoute((r) => ({ ...r, method: e.target.value as any }))}
               variant="standard"
               disableUnderline
+              renderValue={(val) => (val as string).toUpperCase()}
               sx={{
                 height: 24,
                 minWidth: 72,
@@ -368,6 +383,31 @@ export const RoutesView: React.FC = () => {
               fontWeight: 600
             }}
           />
+
+          {/* Copy Full Route URL Icon Button */}
+          <Tooltip title={locale === 'zh-CN' ? `复制完整接口地址: ${fullRouteUrl}` : `Copy Full URL: ${fullRouteUrl}`} arrow>
+            <IconButton
+              size="small"
+              onClick={() => {
+                if (fullRouteUrl) {
+                  navigator.clipboard.writeText(fullRouteUrl);
+                  setCopiedSnackbar(true);
+                }
+              }}
+              sx={{
+                p: 0.5,
+                mr: 0.2,
+                color: theme.palette.text.secondary,
+                borderRadius: 1,
+                '&:hover': {
+                  color: theme.palette.primary.main,
+                  backgroundColor: alpha(theme.palette.primary.main, 0.08)
+                }
+              }}
+            >
+              <ContentCopyRoundedIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Tooltip>
         </Box>
 
         {/* Documentation / Alias Hint Input below address bar */}
@@ -463,7 +503,7 @@ export const RoutesView: React.FC = () => {
           minHeight: 38,
           px: 1.5,
           display: 'flex',
-          gap: 1.5,
+          gap: 1.2,
           alignItems: 'center',
           flexWrap: 'nowrap',
           overflowX: 'auto',
@@ -471,7 +511,20 @@ export const RoutesView: React.FC = () => {
           backgroundColor:
             theme.palette.mode === 'light'
               ? alpha(theme.palette.grey[50], 0.6)
-              : alpha(theme.palette.background.default, 0.4)
+              : alpha(theme.palette.background.default, 0.4),
+          '&::-webkit-scrollbar': {
+            height: '3px'
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'transparent'
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: alpha(theme.palette.text.primary, 0.15),
+            borderRadius: '3px',
+            '&:hover': {
+              backgroundColor: alpha(theme.palette.text.primary, 0.3)
+            }
+          }
         }}
       >
         {/* Status Code */}
@@ -552,7 +605,7 @@ export const RoutesView: React.FC = () => {
         </Box>
 
         {/* Branch Label */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flex: 1, minWidth: 140 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flex: 1, minWidth: 100, maxWidth: 320 }}>
           <Typography
             variant="caption"
             sx={{
@@ -1024,6 +1077,23 @@ export const RoutesView: React.FC = () => {
           </Box>
         )}
       </Box>
+
+      {/* Copied Full URL Toast */}
+      <Snackbar
+        open={copiedSnackbar}
+        autoHideDuration={2500}
+        onClose={() => setCopiedSnackbar(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setCopiedSnackbar(false)}
+          severity="success"
+          variant="filled"
+          sx={{ width: '100%', fontSize: '0.8rem', py: 0.5, boxShadow: 3 }}
+        >
+          {locale === 'zh-CN' ? `接口完整路径已复制到剪贴板！(${fullRouteUrl})` : `Full route URL copied to clipboard! (${fullRouteUrl})`}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

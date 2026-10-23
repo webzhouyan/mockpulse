@@ -89,34 +89,52 @@ export const HeadersView: React.FC = () => {
   return (
     <Box sx={{ p: isCompact ? 2 : 3, height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
       {/* Top Header & Actions */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-        <Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, fontSize: isCompact ? '0.9rem' : '1.1rem' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'nowrap', gap: 1.5 }}>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, fontSize: isCompact ? '0.9rem' : '1.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {t.headers.title}
           </Typography>
-          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, mt: 0.2, display: 'block' }}>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, mt: 0.2, display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {t.headers.subtitle}
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0 }}>
           <Button
             size="small"
-            variant="text"
+            variant="outlined"
             color="primary"
             startIcon={<SecurityRoundedIcon sx={{ fontSize: 16 }} />}
             onClick={handleAddCORSHeaders}
-            sx={{ fontSize: '0.78rem', textTransform: 'none' }}
+            sx={{
+              fontSize: '0.75rem',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              height: 30,
+              px: 1.2
+            }}
           >
-            {t.headers.addCorsHeaders || '添加 CORS 跨域头 (add CORS headers)'}
+            {t.headers.addCorsHeaders || '添加 CORS 跨域头'}
           </Button>
 
           <Button
             size="small"
             variant="outlined"
+            color="inherit"
             startIcon={<RestartAltRoundedIcon sx={{ fontSize: 16 }} />}
             onClick={handleResetDefault}
-            sx={{ fontSize: '0.78rem' }}
+            sx={{
+              fontSize: '0.75rem',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              height: 30,
+              px: 1.2,
+              borderColor: theme.palette.divider,
+              '&:hover': {
+                borderColor: theme.palette.text.primary,
+                backgroundColor: alpha(theme.palette.text.primary, 0.04)
+              }
+            }}
           >
             {t.headers.resetDefault || '重置为默认'}
           </Button>
@@ -126,7 +144,13 @@ export const HeadersView: React.FC = () => {
             variant="contained"
             startIcon={<AddRoundedIcon sx={{ fontSize: 16 }} />}
             onClick={handleAddHeader}
-            sx={{ whiteSpace: 'nowrap' }}
+            sx={{
+              fontSize: '0.75rem',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              height: 30,
+              px: 1.4
+            }}
           >
             {t.headers.addHeader}
           </Button>
