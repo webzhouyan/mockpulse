@@ -1,31 +1,41 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Environment,
-  Environments,
-  Route,
-  RouteResponse,
-  Header,
-  Callback,
-  DataBucket,
-  Folder,
-  FolderChild,
-  Transaction,
-  BuildDemoEnvironment,
-  BuildHTTPRoute,
   BuildCRUDRoute,
-  BuildWebSocketRoute,
+  BuildDemoEnvironment,
   BuildFolder,
-  reorderRoutesMutator,
-  ReorderActionType
+  BuildHTTPRoute,
+  BuildWebSocketRoute,
+  Environment,
+  Folder,
+  Route,
+  Transaction
 } from '@mockoon/commons';
-import { Settings, EnvironmentDescriptor } from 'src/shared/models/settings.model';
-import { apiService } from '../services/api.service';
-import { ThemePresetKey, LayoutDensity } from '../theme';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState
+} from 'react';
+import {
+  EnvironmentDescriptor,
+  Settings
+} from 'src/shared/models/settings.model';
 import { SupportedLocale } from '../i18n';
+import { apiService } from '../services/api.service';
+import { LayoutDensity, ThemePresetKey } from '../theme';
 
 export type ServerStatus = 'stopped' | 'starting' | 'running' | 'error';
 
-export const DEFAULT_NAV_TABS = ['routes', 'dataBuckets', 'headers', 'callbacks', 'logs', 'proxy', 'settings'];
+export const DEFAULT_NAV_TABS = [
+  'routes',
+  'dataBuckets',
+  'headers',
+  'callbacks',
+  'logs',
+  'proxy',
+  'settings'
+];
 
 interface AppContextType {
   settings: Settings | null;
@@ -45,7 +55,9 @@ interface AppContextType {
   updateFolder: (folderUuid: string, partial: Partial<Folder>) => void;
   deleteFolder: (folderUuid: string) => void;
   setActiveEnvironmentUuid: (uuid: string) => void;
-  updateActiveEnvironment: (updater: (prev: Environment) => Environment) => void;
+  updateActiveEnvironment: (
+    updater: (prev: Environment) => Environment
+  ) => void;
   createEnvironment: () => Promise<void>;
   importEnvironment: () => Promise<void>;
   exportEnvironment: (env: Environment) => Promise<void>;
@@ -67,6 +79,10 @@ interface AppContextType {
   setLayoutDensity: (density: LayoutDensity) => void;
   navTabsOrder: string[];
   setNavTabsOrder: (order: string[]) => void;
+  mainMenuSize: number;
+  setMainMenuSize: (size: number) => void;
+  secondaryMenuSize: number;
+  setSecondaryMenuSize: (size: number) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -108,8 +124,15 @@ const DEFAULT_SETTINGS: Settings = {
 export const DEFAULT_GLOBAL_HEADERS = [
   { key: 'Content-Type', value: 'application/json' },
   { key: 'Access-Control-Allow-Origin', value: '*' },
-  { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS' },
-  { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Origin, Accept, Authorization, Content-Length, X-Requested-With' }
+  {
+    key: 'Access-Control-Allow-Methods',
+    value: 'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS'
+  },
+  {
+    key: 'Access-Control-Allow-Headers',
+    value:
+      'Content-Type, Origin, Accept, Authorization, Content-Length, X-Requested-With'
+  }
 ];
 
 export const sanitizeEnvironment = (env: any): Environment => {
@@ -120,14 +143,18 @@ export const sanitizeEnvironment = (env: any): Environment => {
     folders: Array.isArray(env.folders)
       ? env.folders.map((f: any) => ({
           ...f,
-          uuid: f.uuid || 'folder_' + Math.random().toString(36).substring(2, 10),
-          children: Array.isArray(f.children) ? f.children.filter((c: any) => c && c.uuid) : []
+          uuid:
+            f.uuid || 'folder_' + Math.random().toString(36).substring(2, 10),
+          children: Array.isArray(f.children)
+            ? f.children.filter((c: any) => c && c.uuid)
+            : []
         }))
       : [],
     routes: Array.isArray(env.routes)
       ? env.routes.map((r: any) => ({
           ...r,
-          uuid: r.uuid || 'route_' + Math.random().toString(36).substring(2, 10),
+          uuid:
+            r.uuid || 'route_' + Math.random().toString(36).substring(2, 10),
           type: r.type || 'http',
           method: r.method || (r.type === 'crud' ? '' : 'get'),
           responses: Array.isArray(r.responses) ? r.responses : []
@@ -136,7 +163,9 @@ export const sanitizeEnvironment = (env: any): Environment => {
     data: Array.isArray(env.data) ? env.data : [],
     callbacks: Array.isArray(env.callbacks) ? env.callbacks : [],
     headers: Array.isArray(env.headers) ? env.headers : [],
-    rootChildren: Array.isArray(env.rootChildren) ? env.rootChildren.filter((c: any) => c && c.uuid) : []
+    rootChildren: Array.isArray(env.rootChildren)
+      ? env.rootChildren.filter((c: any) => c && c.uuid)
+      : []
   };
 
   const accounted = new Set<string>();
@@ -146,7 +175,9 @@ export const sanitizeEnvironment = (env: any): Environment => {
     f.children?.forEach((c) => accounted.add(c.uuid));
   });
 
-  const missingFolders = sanitized.folders.filter((f) => !accounted.has(f.uuid));
+  const missingFolders = sanitized.folders.filter(
+    (f) => !accounted.has(f.uuid)
+  );
   const missingRoutes = sanitized.routes.filter((r) => !accounted.has(r.uuid));
 
   sanitized.rootChildren = [
@@ -182,7 +213,8 @@ const createDefaultEnvironment = (name?: string): Environment => {
   if (Array.isArray(cloned.routes)) {
     cloned.routes.forEach((r: any) => {
       const oldRouteUuid = r.uuid;
-      const newRouteUuid = 'route_' + Math.random().toString(36).substring(2, 10);
+      const newRouteUuid =
+        'route_' + Math.random().toString(36).substring(2, 10);
       r.uuid = newRouteUuid;
       if (oldRouteUuid) uuidMap.set(oldRouteUuid, newRouteUuid);
 
@@ -200,7 +232,8 @@ const createDefaultEnvironment = (name?: string): Environment => {
   if (Array.isArray(cloned.folders)) {
     cloned.folders.forEach((f: any) => {
       const oldFolderUuid = f.uuid;
-      const newFolderUuid = 'folder_' + Math.random().toString(36).substring(2, 10);
+      const newFolderUuid =
+        'folder_' + Math.random().toString(36).substring(2, 10);
       f.uuid = newFolderUuid;
       if (oldFolderUuid) uuidMap.set(oldFolderUuid, newFolderUuid);
       if (Array.isArray(f.children)) {
@@ -224,21 +257,36 @@ const createDefaultEnvironment = (name?: string): Environment => {
   return sanitizeEnvironment(cloned);
 };
 
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
+  children
+}) => {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [environments, setEnvironments] = useState<Environment[]>([]);
-  const [activeEnvironmentUuid, setActiveEnvironmentUuid] = useState<string | null>(null);
-  const [serverStatuses, setServerStatuses] = useState<Record<string, ServerStatus>>({});
-  const [serverLogs, setServerLogs] = useState<Record<string, Transaction[]>>({});
+  const [activeEnvironmentUuid, setActiveEnvironmentUuid] = useState<
+    string | null
+  >(null);
+  const [serverStatuses, setServerStatuses] = useState<
+    Record<string, ServerStatus>
+  >({});
+  const [serverLogs, setServerLogs] = useState<Record<string, Transaction[]>>(
+    {}
+  );
   const [activeTabKey, setActiveTabKey] = useState<string>('routes');
-  const [selectedRouteUuid, setSelectedRouteUuid] = useState<string | null>(null);
-  const [navTabsOrder, setNavTabsOrderState] = useState<string[]>(DEFAULT_NAV_TABS);
+  const [selectedRouteUuid, setSelectedRouteUuid] = useState<string | null>(
+    null
+  );
+  const [navTabsOrder, setNavTabsOrderState] =
+    useState<string[]>(DEFAULT_NAV_TABS);
 
   const [themeMode, setThemeModeState] = useState<'light' | 'dark'>('dark');
-  const [themePreset, setThemePresetState] = useState<ThemePresetKey>('modern-indigo');
+  const [themePreset, setThemePresetState] =
+    useState<ThemePresetKey>('modern-indigo');
   const [locale, setLocaleState] = useState<SupportedLocale>('zh-CN');
-  const [layoutDensity, setLayoutDensityState] = useState<LayoutDensity>('compact');
+  const [layoutDensity, setLayoutDensityState] =
+    useState<LayoutDensity>('compact');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+  const [mainMenuSize, setMainMenuSizeState] = useState<number>(220);
+  const [secondaryMenuSize, setSecondaryMenuSizeState] = useState<number>(290);
 
   // Load initial settings and environments
   useEffect(() => {
@@ -250,19 +298,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         loadedSettings = DEFAULT_SETTINGS;
       }
 
-      if (loadedSettings.themeMode === 'light' || loadedSettings.themeMode === 'dark') {
+      if (
+        loadedSettings.themeMode === 'light' ||
+        loadedSettings.themeMode === 'dark'
+      ) {
         setThemeModeState(loadedSettings.themeMode);
       }
-      if (loadedSettings.themePreset && loadedSettings.themePreset !== 'custom') {
+      if (
+        loadedSettings.themePreset &&
+        loadedSettings.themePreset !== 'custom'
+      ) {
         setThemePresetState(loadedSettings.themePreset as ThemePresetKey);
       }
-      if (loadedSettings.locale && (loadedSettings.locale === 'zh-CN' || loadedSettings.locale === 'en')) {
+      if (
+        loadedSettings.locale &&
+        (loadedSettings.locale === 'zh-CN' || loadedSettings.locale === 'en')
+      ) {
         setLocaleState(loadedSettings.locale as SupportedLocale);
       }
       if (loadedSettings.layoutDensity) {
         setLayoutDensityState(loadedSettings.layoutDensity);
       }
-      if (Array.isArray(loadedSettings.navTabsOrder) && loadedSettings.navTabsOrder.length > 0) {
+      if (loadedSettings.mainMenuSize) {
+        setMainMenuSizeState(Math.max(180, loadedSettings.mainMenuSize));
+      }
+      if (loadedSettings.secondaryMenuSize) {
+        setSecondaryMenuSizeState(Math.max(260, loadedSettings.secondaryMenuSize));
+      }
+      if (
+        Array.isArray(loadedSettings.navTabsOrder) &&
+        loadedSettings.navTabsOrder.length > 0
+      ) {
         // Ensure all tabs exist
         const merged = [...loadedSettings.navTabsOrder];
         DEFAULT_NAV_TABS.forEach((t) => {
@@ -286,7 +352,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // If no environment exists, create a default one
       if (envList.length === 0) {
         const defaultEnv = createDefaultEnvironment('MockPulse Demo');
-        const storagePath = await apiService.buildStorageFilePath(defaultEnv.uuid);
+        const storagePath = await apiService.buildStorageFilePath(
+          defaultEnv.uuid
+        );
         const desc: EnvironmentDescriptor = {
           uuid: defaultEnv.uuid,
           path: storagePath,
@@ -303,7 +371,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (mounted) {
         setSettings(loadedSettings);
         setEnvironments(envList);
-        setActiveEnvironmentUuid(loadedSettings.activeEnvironmentUuid || envList[0]?.uuid || null);
+        setActiveEnvironmentUuid(
+          loadedSettings.activeEnvironmentUuid || envList[0]?.uuid || null
+        );
       }
     };
 
@@ -335,7 +405,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const activeEnvironment = useMemo(() => {
-    return environments.find((e) => e.uuid === activeEnvironmentUuid) || environments[0] || null;
+    return (
+      environments.find((e) => e.uuid === activeEnvironmentUuid) ||
+      environments[0] ||
+      null
+    );
   }, [environments, activeEnvironmentUuid]);
 
   // Update Settings helper
@@ -348,65 +422,117 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, []);
 
-  const setThemeMode = useCallback((mode: 'light' | 'dark') => {
-    setThemeModeState(mode);
-    updateSettings({ themeMode: mode });
-  }, [updateSettings]);
+  const setThemeMode = useCallback(
+    (mode: 'light' | 'dark') => {
+      setThemeModeState(mode);
+      updateSettings({ themeMode: mode });
+    },
+    [updateSettings]
+  );
 
-  const setThemePreset = useCallback((preset: ThemePresetKey) => {
-    setThemePresetState(preset);
-    updateSettings({ themePreset: preset as any });
-  }, [updateSettings]);
+  const setThemePreset = useCallback(
+    (preset: ThemePresetKey) => {
+      setThemePresetState(preset);
+      updateSettings({ themePreset: preset as any });
+    },
+    [updateSettings]
+  );
 
-  const setLocale = useCallback((newLocale: SupportedLocale) => {
-    setLocaleState(newLocale);
-    updateSettings({ locale: newLocale });
-  }, [updateSettings]);
+  const setLocale = useCallback(
+    (newLocale: SupportedLocale) => {
+      setLocaleState(newLocale);
+      updateSettings({ locale: newLocale });
+    },
+    [updateSettings]
+  );
 
-  const setLayoutDensity = useCallback((density: LayoutDensity) => {
-    setLayoutDensityState(density);
-    updateSettings({ layoutDensity: density });
-  }, [updateSettings]);
+  const setLayoutDensity = useCallback(
+    (density: LayoutDensity) => {
+      setLayoutDensityState(density);
+      updateSettings({ layoutDensity: density });
+    },
+    [updateSettings]
+  );
 
   const toggleSidebar = useCallback(() => {
     setIsSidebarCollapsed((prev) => !prev);
   }, []);
 
-  const setNavTabsOrder = useCallback((order: string[]) => {
-    setNavTabsOrderState(order);
-    updateSettings({ navTabsOrder: order });
-  }, [updateSettings]);
+  const setNavTabsOrder = useCallback(
+    (order: string[]) => {
+      setNavTabsOrderState(order);
+      updateSettings({ navTabsOrder: order });
+    },
+    [updateSettings]
+  );
+
+  const setMainMenuSize = useCallback(
+    (size: number) => {
+      const clamped = Math.max(160, Math.min(450, Math.round(size)));
+      setMainMenuSizeState(clamped);
+      updateSettings({ mainMenuSize: clamped });
+    },
+    [updateSettings]
+  );
+
+  const setSecondaryMenuSize = useCallback(
+    (size: number) => {
+      const clamped = Math.max(240, Math.min(600, Math.round(size)));
+      setSecondaryMenuSizeState(clamped);
+      updateSettings({ secondaryMenuSize: clamped });
+    },
+    [updateSettings]
+  );
 
   // Update Environment
-  const updateActiveEnvironment = useCallback((updater: (prev: Environment) => Environment) => {
-    if (!activeEnvironment) return;
+  const updateActiveEnvironment = useCallback(
+    (updater: (prev: Environment) => Environment) => {
+      if (!activeEnvironment) return;
 
-    setEnvironments((prevEnvs) => {
-      const idx = prevEnvs.findIndex((e) => e.uuid === activeEnvironment.uuid);
-      if (idx === -1) return prevEnvs;
+      setEnvironments((prevEnvs) => {
+        const idx = prevEnvs.findIndex(
+          (e) => e.uuid === activeEnvironment.uuid
+        );
+        if (idx === -1) return prevEnvs;
 
-      const updated = updater({ ...prevEnvs[idx] });
-      const nextEnvs = [...prevEnvs];
-      nextEnvs[idx] = updated;
+        const updated = updater({ ...prevEnvs[idx] });
+        const nextEnvs = [...prevEnvs];
+        nextEnvs[idx] = updated;
 
-      // Find descriptor
-      if (settings) {
-        const desc = settings.environments.find((d) => d.uuid === updated.uuid);
-        if (desc) {
-          apiService.writeEnvironment(updated, desc, settings.storagePrettyPrint);
+        // Find descriptor
+        if (settings) {
+          const desc = settings.environments.find(
+            (d) => d.uuid === updated.uuid
+          );
+          if (desc) {
+            apiService.writeEnvironment(
+              updated,
+              desc,
+              settings.storagePrettyPrint
+            );
+          }
         }
-      }
 
-      // Hot reload running server
-      apiService.updateEnvironments(nextEnvs);
+        // Hot reload running server
+        apiService.updateEnvironments(nextEnvs);
 
-      return nextEnvs;
-    });
-  }, [activeEnvironment, settings]);
+        return nextEnvs;
+      });
+    },
+    [activeEnvironment, settings]
+  );
 
   // Create Environment
   const createEnvironment = useCallback(async () => {
-    const newEnv = createDefaultEnvironment(`API Env ${environments.length + 1}`);
+    const maxPort = environments.reduce(
+      (max, env) => Math.max(max, env.port || 3000),
+      2999
+    );
+    const newPort = maxPort + 1;
+    const newEnv = createDefaultEnvironment(
+      `API Env ${environments.length + 1}`
+    );
+    newEnv.port = newPort;
     const filePath = await apiService.buildStorageFilePath(newEnv.uuid);
     const desc: EnvironmentDescriptor = {
       uuid: newEnv.uuid,
@@ -492,85 +618,100 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   // Duplicate Environment
-  const duplicateEnvironment = useCallback(async (uuid: string) => {
-    const target = environments.find((e) => e.uuid === uuid);
-    if (!target) return;
+  const duplicateEnvironment = useCallback(
+    async (uuid: string) => {
+      const target = environments.find((e) => e.uuid === uuid);
+      if (!target) return;
 
-    const copy: Environment = sanitizeEnvironment(JSON.parse(JSON.stringify(target)));
-    copy.uuid = 'env_' + Math.random().toString(36).substring(2, 10);
-    copy.name = `${copy.name} (Copy)`;
-    copy.port = (copy.port || 3000) + 1;
+      const copy: Environment = sanitizeEnvironment(
+        JSON.parse(JSON.stringify(target))
+      );
+      const maxPort = environments.reduce(
+        (max, env) => Math.max(max, env.port || 3000),
+        2999
+      );
+      copy.uuid = 'env_' + Math.random().toString(36).substring(2, 10);
+      copy.name = `${copy.name} (Copy)`;
+      copy.port = maxPort + 1;
 
-    const filePath = await apiService.buildStorageFilePath(copy.uuid);
-    const desc: EnvironmentDescriptor = {
-      uuid: copy.uuid,
-      path: filePath,
-      cloud: false,
-      lastServerHash: null
-    };
-
-    await apiService.writeEnvironment(copy, desc, true);
-
-    const nextEnvs = [...environments, copy];
-    setEnvironments(nextEnvs);
-    setActiveEnvironmentUuid(copy.uuid);
-
-    if (settings) {
-      const nextSettings: Settings = {
-        ...settings,
-        environments: [...settings.environments, desc],
-        activeEnvironmentUuid: copy.uuid
+      const filePath = await apiService.buildStorageFilePath(copy.uuid);
+      const desc: EnvironmentDescriptor = {
+        uuid: copy.uuid,
+        path: filePath,
+        cloud: false,
+        lastServerHash: null
       };
-      setSettings(nextSettings);
-      await apiService.writeSettings(nextSettings);
-    }
-  }, [environments, settings]);
+
+      await apiService.writeEnvironment(copy, desc, true);
+
+      const nextEnvs = [...environments, copy];
+      setEnvironments(nextEnvs);
+      setActiveEnvironmentUuid(copy.uuid);
+
+      if (settings) {
+        const nextSettings: Settings = {
+          ...settings,
+          environments: [...settings.environments, desc],
+          activeEnvironmentUuid: copy.uuid
+        };
+        setSettings(nextSettings);
+        await apiService.writeSettings(nextSettings);
+      }
+    },
+    [environments, settings]
+  );
 
   // Delete Environment
-  const deleteEnvironment = useCallback(async (uuid: string) => {
-    if (environments.length <= 1) return;
+  const deleteEnvironment = useCallback(
+    async (uuid: string) => {
+      if (environments.length <= 1) return;
 
-    if (serverStatuses[uuid] === 'running') {
-      await apiService.stopServer(uuid);
-    }
+      if (serverStatuses[uuid] === 'running') {
+        await apiService.stopServer(uuid);
+      }
 
-    const nextEnvs = environments.filter((e) => e.uuid !== uuid);
-    setEnvironments(nextEnvs);
+      const nextEnvs = environments.filter((e) => e.uuid !== uuid);
+      setEnvironments(nextEnvs);
 
-    const nextActive = nextEnvs[0]?.uuid || null;
-    setActiveEnvironmentUuid(nextActive);
+      const nextActive = nextEnvs[0]?.uuid || null;
+      setActiveEnvironmentUuid(nextActive);
 
-    if (settings) {
-      const nextSettings: Settings = {
-        ...settings,
-        environments: settings.environments.filter((d) => d.uuid !== uuid),
-        activeEnvironmentUuid: nextActive
-      };
-      setSettings(nextSettings);
-      await apiService.writeSettings(nextSettings);
-    }
-  }, [environments, serverStatuses, settings]);
+      if (settings) {
+        const nextSettings: Settings = {
+          ...settings,
+          environments: settings.environments.filter((d) => d.uuid !== uuid),
+          activeEnvironmentUuid: nextActive
+        };
+        setSettings(nextSettings);
+        await apiService.writeSettings(nextSettings);
+      }
+    },
+    [environments, serverStatuses, settings]
+  );
 
   // Toggle Server
-  const toggleServer = useCallback(async (uuid: string) => {
-    const env = environments.find((e) => e.uuid === uuid);
-    if (!env || !settings) return;
+  const toggleServer = useCallback(
+    async (uuid: string) => {
+      const env = environments.find((e) => e.uuid === uuid);
+      if (!env || !settings) return;
 
-    const desc = settings.environments.find((d) => d.uuid === uuid);
-    const currentStatus = serverStatuses[uuid] || 'stopped';
+      const desc = settings.environments.find((d) => d.uuid === uuid);
+      const currentStatus = serverStatuses[uuid] || 'stopped';
 
-    if (currentStatus === 'running') {
-      setServerStatuses((prev) => ({ ...prev, [uuid]: 'stopped' }));
-      await apiService.stopServer(uuid);
-    } else {
-      setServerStatuses((prev) => ({ ...prev, [uuid]: 'starting' }));
-      try {
-        await apiService.startServer(env, desc?.path || '');
-      } catch (err) {
-        setServerStatuses((prev) => ({ ...prev, [uuid]: 'error' }));
+      if (currentStatus === 'running') {
+        setServerStatuses((prev) => ({ ...prev, [uuid]: 'stopped' }));
+        await apiService.stopServer(uuid);
+      } else {
+        setServerStatuses((prev) => ({ ...prev, [uuid]: 'starting' }));
+        try {
+          await apiService.startServer(env, desc?.path || '');
+        } catch (err) {
+          setServerStatuses((prev) => ({ ...prev, [uuid]: 'error' }));
+        }
       }
-    }
-  }, [environments, settings, serverStatuses]);
+    },
+    [environments, settings, serverStatuses]
+  );
 
   // Clear Logs
   const clearLogs = useCallback((uuid: string) => {
@@ -578,137 +719,189 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   // Add Route (HTTP, CRUD, WS)
-  const addRoute = useCallback((type: 'http' | 'crud' | 'ws' = 'http') => {
-    if (!activeEnvironment) return;
-    let newRoute: Route;
-    if (type === 'crud') {
-      const firstBucketId = activeEnvironment.data?.[0]?.id || '';
-      newRoute = {
-        ...BuildCRUDRoute(true, { endpoint: 'new-crud', databucketID: firstBucketId }),
-        endpoint: 'new-crud',
-        documentation: 'CRUD Route'
-      };
-    } else if (type === 'ws') {
-      newRoute = {
-        ...BuildWebSocketRoute(true, { endpoint: 'ws', body: '{\n  "message": "WS Hello"\n}' }),
-        endpoint: 'ws',
-        documentation: 'WebSocket Route'
-      };
-    } else {
-      newRoute = {
-        ...BuildHTTPRoute(true, { endpoint: 'new-endpoint', body: '{\n  "message": "Hello from MockPulse"\n}' }),
-        endpoint: 'new-endpoint',
-        documentation: ''
-      };
-    }
+  const addRoute = useCallback(
+    (type: 'http' | 'crud' | 'ws' = 'http') => {
+      if (!activeEnvironment) return;
+      let newRoute: Route;
+      if (type === 'crud') {
+        const firstBucketId = activeEnvironment.data?.[0]?.id || '';
+        newRoute = {
+          ...BuildCRUDRoute(true, {
+            endpoint: 'new-crud',
+            databucketID: firstBucketId
+          }),
+          endpoint: 'new-crud',
+          documentation: 'CRUD Route'
+        };
+      } else if (type === 'ws') {
+        newRoute = {
+          ...BuildWebSocketRoute(true, {
+            endpoint: 'ws',
+            body: '{\n  "message": "WS Hello"\n}'
+          }),
+          endpoint: 'ws',
+          documentation: 'WebSocket Route'
+        };
+      } else {
+        newRoute = {
+          ...BuildHTTPRoute(true, {
+            endpoint: 'new-endpoint',
+            body: '{\n  "message": "Hello from MockPulse"\n}'
+          }),
+          endpoint: 'new-endpoint',
+          documentation: ''
+        };
+      }
 
-    updateActiveEnvironment((env) => ({
-      ...env,
-      routes: [...env.routes, newRoute],
-      rootChildren: [...(env.rootChildren || []), { type: 'route', uuid: newRoute.uuid }]
-    }));
-    setSelectedRouteUuid(newRoute.uuid);
-    setActiveTabKey('routes');
-  }, [activeEnvironment, updateActiveEnvironment]);
+      updateActiveEnvironment((env) => ({
+        ...env,
+        routes: [...env.routes, newRoute],
+        rootChildren: [
+          ...(env.rootChildren || []),
+          { type: 'route', uuid: newRoute.uuid }
+        ]
+      }));
+      setSelectedRouteUuid(newRoute.uuid);
+      setActiveTabKey('routes');
+    },
+    [activeEnvironment, updateActiveEnvironment]
+  );
 
   // Duplicate Route
-  const duplicateRoute = useCallback((routeUuid: string) => {
-    if (!activeEnvironment) return;
-    const targetIdx = activeEnvironment.routes.findIndex((r) => r.uuid === routeUuid);
-    if (targetIdx === -1) return;
-    const source = activeEnvironment.routes[targetIdx];
+  const duplicateRoute = useCallback(
+    (routeUuid: string) => {
+      if (!activeEnvironment) return;
+      const targetIdx = activeEnvironment.routes.findIndex(
+        (r) => r.uuid === routeUuid
+      );
+      if (targetIdx === -1) return;
+      const source = activeEnvironment.routes[targetIdx];
 
-    const duplicated: Route = {
-      ...JSON.parse(JSON.stringify(source)),
-      uuid: 'route_' + Math.random().toString(36).substring(2, 10),
-      endpoint: `${source.endpoint}-copy`,
-      documentation: source.documentation ? `${source.documentation} (Copy)` : 'Copy',
-      responses: (source.responses || []).map((resp: any) => ({
-        ...resp,
-        uuid: 'resp_' + Math.random().toString(36).substring(2, 10)
-      }))
-    };
+      const duplicated: Route = {
+        ...JSON.parse(JSON.stringify(source)),
+        uuid: 'route_' + Math.random().toString(36).substring(2, 10),
+        endpoint: `${source.endpoint}-copy`,
+        documentation: source.documentation
+          ? `${source.documentation} (Copy)`
+          : 'Copy',
+        responses: (source.responses || []).map((resp: any) => ({
+          ...resp,
+          uuid: 'resp_' + Math.random().toString(36).substring(2, 10)
+        }))
+      };
 
-    const nextRoutes = [...activeEnvironment.routes];
-    nextRoutes.splice(targetIdx + 1, 0, duplicated);
+      const nextRoutes = [...activeEnvironment.routes];
+      nextRoutes.splice(targetIdx + 1, 0, duplicated);
 
-    // Also insert into rootChildren or container folder
-    let nextRootChildren = [...(activeEnvironment.rootChildren || [])];
-    const rootIdx = nextRootChildren.findIndex((c) => c.uuid === routeUuid);
-    if (rootIdx !== -1) {
-      nextRootChildren.splice(rootIdx + 1, 0, { type: 'route', uuid: duplicated.uuid });
-    } else {
-      nextRootChildren.push({ type: 'route', uuid: duplicated.uuid });
-    }
+      // Also insert into rootChildren or container folder
+      let nextRootChildren = [...(activeEnvironment.rootChildren || [])];
+      const rootIdx = nextRootChildren.findIndex((c) => c.uuid === routeUuid);
+      if (rootIdx !== -1) {
+        nextRootChildren.splice(rootIdx + 1, 0, {
+          type: 'route',
+          uuid: duplicated.uuid
+        });
+      } else {
+        nextRootChildren.push({ type: 'route', uuid: duplicated.uuid });
+      }
 
-    updateActiveEnvironment((env) => ({
-      ...env,
-      routes: nextRoutes,
-      rootChildren: nextRootChildren
-    }));
-    setSelectedRouteUuid(duplicated.uuid);
-    setActiveTabKey('routes');
-  }, [activeEnvironment, updateActiveEnvironment]);
+      updateActiveEnvironment((env) => ({
+        ...env,
+        routes: nextRoutes,
+        rootChildren: nextRootChildren
+      }));
+      setSelectedRouteUuid(duplicated.uuid);
+      setActiveTabKey('routes');
+    },
+    [activeEnvironment, updateActiveEnvironment]
+  );
 
   // Add Folder
-  const addFolder = useCallback((name = 'New folder') => {
-    if (!activeEnvironment) return;
-    const newFolder = BuildFolder();
-    newFolder.name = name;
-    updateActiveEnvironment((env) => ({
-      ...env,
-      folders: [...(env.folders || []), newFolder],
-      rootChildren: [...(env.rootChildren || []), { type: 'folder', uuid: newFolder.uuid }]
-    }));
-  }, [activeEnvironment, updateActiveEnvironment]);
+  const addFolder = useCallback(
+    (name = 'New folder') => {
+      if (!activeEnvironment) return;
+      const newFolder = BuildFolder();
+      newFolder.name = name;
+      updateActiveEnvironment((env) => ({
+        ...env,
+        folders: [...(env.folders || []), newFolder],
+        rootChildren: [
+          ...(env.rootChildren || []),
+          { type: 'folder', uuid: newFolder.uuid }
+        ]
+      }));
+    },
+    [activeEnvironment, updateActiveEnvironment]
+  );
 
   // Update Folder
-  const updateFolder = useCallback((folderUuid: string, partial: Partial<Folder>) => {
-    if (!activeEnvironment) return;
-    updateActiveEnvironment((env) => ({
-      ...env,
-      folders: (env.folders || []).map((f) => (f.uuid === folderUuid ? { ...f, ...partial } : f))
-    }));
-  }, [activeEnvironment, updateActiveEnvironment]);
+  const updateFolder = useCallback(
+    (folderUuid: string, partial: Partial<Folder>) => {
+      if (!activeEnvironment) return;
+      updateActiveEnvironment((env) => ({
+        ...env,
+        folders: (env.folders || []).map((f) =>
+          f.uuid === folderUuid ? { ...f, ...partial } : f
+        )
+      }));
+    },
+    [activeEnvironment, updateActiveEnvironment]
+  );
 
   // Delete Folder
-  const deleteFolder = useCallback((folderUuid: string) => {
-    if (!activeEnvironment) return;
-    const targetFolder = (activeEnvironment.folders || []).find((f) => f.uuid === folderUuid);
-    const childRoutes = targetFolder?.children.filter((c) => c.type === 'route') || [];
+  const deleteFolder = useCallback(
+    (folderUuid: string) => {
+      if (!activeEnvironment) return;
+      const targetFolder = (activeEnvironment.folders || []).find(
+        (f) => f.uuid === folderUuid
+      );
+      const childRoutes =
+        targetFolder?.children.filter((c) => c.type === 'route') || [];
 
-    updateActiveEnvironment((env) => ({
-      ...env,
-      folders: (env.folders || []).filter((f) => f.uuid !== folderUuid),
-      rootChildren: [
-        ...(env.rootChildren || []).filter((c) => c.uuid !== folderUuid),
-        ...childRoutes
-      ]
-    }));
-  }, [activeEnvironment, updateActiveEnvironment]);
+      updateActiveEnvironment((env) => ({
+        ...env,
+        folders: (env.folders || []).filter((f) => f.uuid !== folderUuid),
+        rootChildren: [
+          ...(env.rootChildren || []).filter((c) => c.uuid !== folderUuid),
+          ...childRoutes
+        ]
+      }));
+    },
+    [activeEnvironment, updateActiveEnvironment]
+  );
 
   // Delete Route
-  const deleteRoute = useCallback((routeUuid: string) => {
-    if (!activeEnvironment) return;
-    updateActiveEnvironment((env) => ({
-      ...env,
-      routes: env.routes.filter((r) => r.uuid !== routeUuid),
-      rootChildren: (env.rootChildren || []).filter((c) => c.uuid !== routeUuid),
-      folders: (env.folders || []).map((f) => ({
-        ...f,
-        children: f.children.filter((c) => c.uuid !== routeUuid)
-      }))
-    }));
-    if (selectedRouteUuid === routeUuid) {
-      const remaining = activeEnvironment.routes.filter((r) => r.uuid !== routeUuid);
-      setSelectedRouteUuid(remaining[0]?.uuid || null);
-    }
-  }, [activeEnvironment, selectedRouteUuid, updateActiveEnvironment]);
+  const deleteRoute = useCallback(
+    (routeUuid: string) => {
+      if (!activeEnvironment) return;
+      updateActiveEnvironment((env) => ({
+        ...env,
+        routes: env.routes.filter((r) => r.uuid !== routeUuid),
+        rootChildren: (env.rootChildren || []).filter(
+          (c) => c.uuid !== routeUuid
+        ),
+        folders: (env.folders || []).map((f) => ({
+          ...f,
+          children: f.children.filter((c) => c.uuid !== routeUuid)
+        }))
+      }));
+      if (selectedRouteUuid === routeUuid) {
+        const remaining = activeEnvironment.routes.filter(
+          (r) => r.uuid !== routeUuid
+        );
+        setSelectedRouteUuid(remaining[0]?.uuid || null);
+      }
+    },
+    [activeEnvironment, selectedRouteUuid, updateActiveEnvironment]
+  );
 
   // Auto select first route if none selected
   useEffect(() => {
     if (activeEnvironment && activeEnvironment.routes.length > 0) {
-      if (!selectedRouteUuid || !activeEnvironment.routes.some((r) => r.uuid === selectedRouteUuid)) {
+      if (
+        !selectedRouteUuid ||
+        !activeEnvironment.routes.some((r) => r.uuid === selectedRouteUuid)
+      ) {
         setSelectedRouteUuid(activeEnvironment.routes[0].uuid);
       }
     }
@@ -755,7 +948,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         layoutDensity,
         setLayoutDensity,
         navTabsOrder,
-        setNavTabsOrder
+        setNavTabsOrder,
+        mainMenuSize,
+        setMainMenuSize,
+        secondaryMenuSize,
+        setSecondaryMenuSize
       }}
     >
       {children}

@@ -85,11 +85,14 @@ export const EnvironmentNav: React.FC = () => {
     updateFolder,
     deleteFolder,
     serverLogs,
-    layoutDensity
+    layoutDensity,
+    secondaryMenuSize,
+    setSecondaryMenuSize
   } = useApp();
 
   const isCompact = layoutDensity === 'compact';
   const [search, setSearch] = useState('');
+  const [isResizing, setIsResizing] = useState(false);
   const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
 
   // Rename folder dialog
@@ -123,6 +126,28 @@ export const EnvironmentNav: React.FC = () => {
       localStorage.setItem('mockpulse_collapsed_folders', JSON.stringify(next));
       return next;
     });
+  };
+
+  const handleSplitterMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizing(true);
+    const startX = e.clientX;
+    const startWidth = secondaryMenuSize || 280;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const delta = moveEvent.clientX - startX;
+      setSecondaryMenuSize(startWidth + delta);
+    };
+
+    const onMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
   };
 
   const toggleGlobalConfig = () => {
@@ -435,57 +460,75 @@ export const EnvironmentNav: React.FC = () => {
           }}
           sx={{
             borderRadius: 1.5,
-            py: 0.4,
+            py: route.documentation ? 0.45 : 0.4,
             px: 1,
             pl: indent ? 2.5 : 1,
             pr: 4.8, // prevent secondaryAction from overlapping text
             minHeight: 32,
-            gap: 0.8
+            alignItems: 'flex-start'
           }}
         >
-          {/* Method color badge */}
-          <Box
-            sx={{
-              px: 0.6,
-              py: 0.15,
-              borderRadius: 0.8,
-              backgroundColor: methodCfg.bg,
-              color: methodCfg.text,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              fontFamily: "'Fira Code', monospace",
-              fontSize: '0.62rem',
-              flexShrink: 0
-            }}
-          >
-            {badgeLabel}
-          </Box>
-
-          {/* Path with Tooltip for long endpoints */}
-          <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, overflow: 'hidden', flex: 1 }}>
-            <Tooltip title={`/${cleanEndpoint}`} arrow enterDelay={400} placement="top">
-              <Typography
-                variant="body2"
-                noWrap
+          <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden', flex: 1 }}>
+            {/* Line 1: Method Micro-Badge + Path */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, minWidth: 0 }}>
+              <Box
                 sx={{
+                  px: 0.5,
+                  py: 0.1,
+                  minWidth: 34,
+                  textAlign: 'center',
+                  borderRadius: 0.6,
+                  backgroundColor: methodCfg.bg,
+                  color: methodCfg.text,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
                   fontFamily: "'Fira Code', monospace",
-                  fontSize: '0.78rem',
-                  fontWeight: isSelected ? 600 : 500
+                  fontSize: '0.62rem',
+                  lineHeight: 1.25,
+                  flexShrink: 0,
+                  letterSpacing: '0.01em'
                 }}
               >
-                /{cleanEndpoint}
-              </Typography>
-            </Tooltip>
+                {badgeLabel}
+              </Box>
 
+              <Tooltip title={`/${cleanEndpoint}`} arrow enterDelay={400} placement="top">
+                <Typography
+                  variant="body2"
+                  noWrap
+                  sx={{
+                    fontFamily: "'Fira Code', monospace",
+                    fontSize: '0.78rem',
+                    fontWeight: isSelected ? 700 : 600,
+                    color: isSelected
+                      ? theme.palette.text.primary
+                      : theme.palette.mode === 'light'
+                      ? '#1e293b'
+                      : '#f1f5f9',
+                    letterSpacing: '-0.01em',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}
+                >
+                  /{cleanEndpoint}
+                </Typography>
+              </Tooltip>
+            </Box>
+
+            {/* Line 2 (Optional): Documentation in subtle small font */}
             {route.documentation && (
               <Tooltip title={route.documentation} arrow enterDelay={400} placement="top">
                 <Typography
                   variant="caption"
                   noWrap
                   sx={{
-                    ml: 0.6,
+                    mt: 0.25,
+                    pl: 0.2,
                     fontSize: '0.68rem',
-                    color: theme.palette.text.secondary
+                    color: theme.palette.text.secondary,
+                    lineHeight: 1.2,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
                   }}
                 >
                   {route.documentation}
@@ -684,16 +727,20 @@ export const EnvironmentNav: React.FC = () => {
   return (
     <Box
       sx={{
-        width: 250,
-        minWidth: 250,
+        width: secondaryMenuSize || 280,
+        minWidth: secondaryMenuSize || 280,
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
+        position: 'relative',
         borderRight: `1px solid ${theme.palette.divider}`,
         backgroundColor:
           theme.palette.mode === 'light'
             ? alpha(theme.palette.background.paper, 0.5)
             : alpha(theme.palette.background.default, 0.65),
+        transition: isResizing
+          ? 'none'
+          : 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         overflow: 'hidden',
         userSelect: 'none'
       }}
@@ -1160,6 +1207,24 @@ export const EnvironmentNav: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Resizable Splitter Handle */}
+      <Box
+        onMouseDown={handleSplitterMouseDown}
+        sx={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: 5,
+          height: '100%',
+          cursor: 'col-resize',
+          zIndex: 10,
+          transition: 'background-color 0.2s ease',
+          '&:hover': {
+            backgroundColor: alpha(theme.palette.primary.main, 0.4)
+          }
+        }}
+      />
     </Box>
   );
 };

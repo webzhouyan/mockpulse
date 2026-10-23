@@ -22,7 +22,8 @@ import {
   TableCell,
   TableBody,
   alpha,
-  useTheme
+  useTheme,
+  InputBase
 } from '@mui/material';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
@@ -200,15 +201,11 @@ export const RoutesView: React.FC = () => {
         backgroundColor: theme.palette.background.default
       }}
     >
-      {/* 1. Ultra-Compact Top Route Bar: Method + Path + Doc Alias in ONE ROW */}
+      {/* 1. Unified Modern Browser-style Address Bar & Description Hint */}
       <Box
         sx={{
-          height: 42,
-          minHeight: 42,
-          px: 1.5,
-          display: 'flex',
-          gap: 1,
-          alignItems: 'center',
+          py: 1.2,
+          px: 1.8,
           borderBottom: `1px solid ${theme.palette.divider}`,
           backgroundColor:
             theme.palette.mode === 'light'
@@ -216,54 +213,76 @@ export const RoutesView: React.FC = () => {
               : alpha(theme.palette.background.default, 0.9)
         }}
       >
-        {/* Method Select (Hidden for CRUD & WS routes, exactly like original Mockoon) */}
-        {activeRoute.type === 'crud' ? (
-          <Box
-            sx={{
-              px: 1.2,
-              py: 0.45,
-              borderRadius: 1.5,
-              backgroundColor: '#8b5cf6',
-              color: '#ffffff',
-              fontWeight: 800,
-              fontSize: '0.72rem',
-              fontFamily: "'Fira Code', monospace",
-              flexShrink: 0,
-              letterSpacing: '0.02em',
-              boxShadow: '0 1px 4px rgba(139, 92, 246, 0.35)'
-            }}
-          >
-            CRUD
-          </Box>
-        ) : activeRoute.type === 'ws' ? (
-          <Box
-            sx={{
-              px: 1.2,
-              py: 0.45,
-              borderRadius: 1.5,
-              backgroundColor: '#06b6d4',
-              color: '#ffffff',
-              fontWeight: 800,
-              fontSize: '0.72rem',
-              fontFamily: "'Fira Code', monospace",
-              flexShrink: 0,
-              letterSpacing: '0.02em',
-              boxShadow: '0 1px 4px rgba(6, 182, 212, 0.35)'
-            }}
-          >
-            WS
-          </Box>
-        ) : (
-          <FormControl size="small" sx={{ width: 90, flexShrink: 0 }}>
+        {/* Unified Address Bar Box */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            borderRadius: 2,
+            border: `1px solid ${theme.palette.divider}`,
+            backgroundColor:
+              theme.palette.mode === 'light' ? '#ffffff' : alpha(theme.palette.background.paper, 0.6),
+            transition: 'all 0.2s ease',
+            '&:focus-within': {
+              borderColor: theme.palette.primary.main,
+              boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.18)}`
+            },
+            overflow: 'hidden'
+          }}
+        >
+          {/* Method Addon on Left (Badge or Select) */}
+          {activeRoute.type === 'crud' ? (
+            <Box
+              sx={{
+                px: 1.2,
+                py: 0.5,
+                backgroundColor: '#8b5cf6',
+                color: '#ffffff',
+                fontWeight: 800,
+                fontSize: '0.72rem',
+                fontFamily: "'Fira Code', monospace",
+                flexShrink: 0,
+                letterSpacing: '0.02em',
+                userSelect: 'none'
+              }}
+            >
+              CRUD
+            </Box>
+          ) : activeRoute.type === 'ws' ? (
+            <Box
+              sx={{
+                px: 1.2,
+                py: 0.5,
+                backgroundColor: '#06b6d4',
+                color: '#ffffff',
+                fontWeight: 800,
+                fontSize: '0.72rem',
+                fontFamily: "'Fira Code', monospace",
+                flexShrink: 0,
+                letterSpacing: '0.02em',
+                userSelect: 'none'
+              }}
+            >
+              WS
+            </Box>
+          ) : (
             <Select
               value={activeRoute.method}
               onChange={(e) => updateRoute((r) => ({ ...r, method: e.target.value as any }))}
+              variant="standard"
+              disableUnderline
               sx={{
-                height: 30,
+                width: 96,
+                flexShrink: 0,
+                height: 32,
+                backgroundColor:
+                  theme.palette.mode === 'light'
+                    ? '#f1f5f9'
+                    : alpha(theme.palette.background.default, 0.7),
+                borderRight: `1px solid ${theme.palette.divider}`,
                 fontSize: '0.72rem',
                 fontWeight: 700,
                 fontFamily: "'Fira Code', monospace",
-                borderRadius: 1.5,
                 '& .MuiSelect-select': {
                   py: 0.4,
                   px: 1,
@@ -320,52 +339,51 @@ export const RoutesView: React.FC = () => {
                 );
               })}
             </Select>
-          </FormControl>
-        )}
+          )}
 
-        <Typography
-          sx={{
-            fontFamily: "'Fira Code', monospace",
-            fontSize: '1rem',
-            fontWeight: 700,
-            color: theme.palette.text.disabled
-          }}
-        >
-          /
-        </Typography>
-
-        {/* Path Input */}
-        <TextField
-          size="small"
-          placeholder="users"
-          value={cleanEndpoint}
-          onChange={(e) => updateRoute((r) => ({ ...r, endpoint: e.target.value.replace(/^\//, '') }))}
-          InputProps={{
-            sx: {
-              height: 30,
-              fontSize: '0.8rem',
+          {/* Slash Prefix */}
+          <Typography
+            sx={{
+              px: 1,
               fontFamily: "'Fira Code', monospace",
-              borderRadius: 1.5
-            }
-          }}
-          sx={{ flex: 1.2, minWidth: 160 }}
-        />
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              color: theme.palette.text.disabled,
+              userSelect: 'none'
+            }}
+          >
+            /
+          </Typography>
 
-        {/* Documentation / Alias Input */}
-        <TextField
-          size="small"
-          placeholder="接口描述 / 别名 (如: 获取用户列表)"
-          value={activeRoute.documentation || ''}
-          onChange={(e) => updateRoute((r) => ({ ...r, documentation: e.target.value }))}
-          InputProps={{
-            sx: {
-              height: 30,
-              fontSize: '0.78rem',
-              borderRadius: 1.5
-            }
-          }}
-          sx={{ flex: 1, minWidth: 180 }}
-        />
+          {/* Clean Endpoint Input */}
+          <InputBase
+            placeholder="endpoint/path"
+            value={cleanEndpoint}
+            onChange={(e) => updateRoute((r) => ({ ...r, endpoint: e.target.value.replace(/^\//, '') }))}
+            sx={{
+              flex: 1,
+              py: 0.4,
+              pr: 1,
+              fontSize: '0.85rem',
+              fontFamily: "'Fira Code', monospace",
+              fontWeight: 600
+            }}
+          />
+        </Box>
+
+        {/* Documentation / Alias Hint Input below address bar */}
+        <Box sx={{ mt: 0.6, px: 0.4, display: 'flex', alignItems: 'center' }}>
+          <InputBase
+            placeholder="添加接口文档描述 / 别名（例如：用户登录鉴权、获取商品列表）"
+            value={activeRoute.documentation || ''}
+            onChange={(e) => updateRoute((r) => ({ ...r, documentation: e.target.value }))}
+            sx={{
+              width: '100%',
+              fontSize: '0.74rem',
+              color: theme.palette.text.secondary
+            }}
+          />
+        </Box>
       </Box>
 
       {/* 2. Response Branches Tab Bar */}
@@ -520,7 +538,7 @@ export const RoutesView: React.FC = () => {
                 borderRadius: 1
               }
             }}
-            sx={{ maxWidth: 200 }}
+            sx={{ flex: 1, minWidth: 150 }}
           />
         </Box>
 
@@ -551,7 +569,7 @@ export const RoutesView: React.FC = () => {
         />
       </Box>
 
-      {/* 4. Single Clean Sub-Tabs: Body / Headers / Rules (NO DUPLICATE TABS) */}
+      {/* 4. Single Clean Sub-Tabs: Body / Headers / Rules */}
       <Box
         sx={{
           height: 34,
@@ -583,26 +601,50 @@ export const RoutesView: React.FC = () => {
             label="响应内容"
           />
           <Tab
-            icon={
-              <Chip
-                size="small"
-                label={activeResponse.headers.length}
-                sx={{ height: 16, fontSize: '0.65rem', ml: 0.5 }}
-              />
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                <span>响应头</span>
+                <Box
+                  sx={{
+                    px: 0.6,
+                    py: 0.1,
+                    borderRadius: 10,
+                    fontSize: '0.64rem',
+                    fontWeight: 700,
+                    backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                    color: theme.palette.primary.main,
+                    minWidth: 16,
+                    lineHeight: 1,
+                    textAlign: 'center'
+                  }}
+                >
+                  {activeResponse.headers.length}
+                </Box>
+              </Box>
             }
-            iconPosition="end"
-            label="响应头 (Response Headers)"
           />
           <Tab
-            icon={
-              <Chip
-                size="small"
-                label={(activeResponse.rules || []).length}
-                sx={{ height: 16, fontSize: '0.65rem', ml: 0.5 }}
-              />
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                <span>规则条件</span>
+                <Box
+                  sx={{
+                    px: 0.6,
+                    py: 0.1,
+                    borderRadius: 10,
+                    fontSize: '0.64rem',
+                    fontWeight: 700,
+                    backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                    color: theme.palette.primary.main,
+                    minWidth: 16,
+                    lineHeight: 1,
+                    textAlign: 'center'
+                  }}
+                >
+                  {(activeResponse.rules || []).length}
+                </Box>
+              </Box>
             }
-            iconPosition="end"
-            label="规则条件 (Rules)"
           />
         </Tabs>
       </Box>

@@ -48,12 +48,37 @@ export const Sidebar: React.FC = () => {
     settings,
     isSidebarCollapsed,
     toggleSidebar,
-    layoutDensity
+    layoutDensity,
+    mainMenuSize,
+    setMainMenuSize
   } = useApp();
 
   const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; uuid: string } | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
   const isCompact = layoutDensity === 'compact';
-  const sidebarWidth = isSidebarCollapsed ? 52 : 180;
+  const sidebarWidth = isSidebarCollapsed ? 52 : (mainMenuSize || 220);
+
+  const handleSplitterMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizing(true);
+    const startX = e.clientX;
+    const startWidth = mainMenuSize || 220;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const delta = moveEvent.clientX - startX;
+      setMainMenuSize(startWidth + delta);
+    };
+
+    const onMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  };
 
   const handleMenuOpen = (e: React.MouseEvent<HTMLElement>, uuid: string) => {
     e.stopPropagation();
@@ -79,7 +104,7 @@ export const Sidebar: React.FC = () => {
             ? alpha(theme.palette.background.paper, 0.7)
             : alpha(theme.palette.background.default, 0.95),
         backdropFilter: 'blur(10px)',
-        transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: isResizing ? 'none' : 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         overflow: 'hidden'
       }}
     >
@@ -296,20 +321,23 @@ export const Sidebar: React.FC = () => {
                   </Tooltip>
 
                   <ListItemText
+                    sx={{ minWidth: 0, overflow: 'hidden' }}
                     primary={
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: isSelected ? 600 : 500,
-                          lineHeight: 1.25,
-                          fontSize: isCompact ? '0.78rem' : '0.85rem',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {env.name}
-                      </Typography>
+                      <Tooltip title={env.name} arrow enterDelay={400} placement="top">
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: isSelected ? 600 : 500,
+                            lineHeight: 1.25,
+                            fontSize: isCompact ? '0.78rem' : '0.85rem',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {env.name}
+                        </Typography>
+                      </Tooltip>
                     }
                     secondary={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mt: 0.2 }}>
@@ -463,6 +491,26 @@ export const Sidebar: React.FC = () => {
           {t.sidebar.deleteEnvironment}
         </MenuItem>
       </Menu>
+
+      {/* Resizable Splitter Handle */}
+      {!isSidebarCollapsed && (
+        <Box
+          onMouseDown={handleSplitterMouseDown}
+          sx={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: 5,
+            height: '100%',
+            cursor: 'col-resize',
+            zIndex: 10,
+            transition: 'background-color 0.2s ease',
+            '&:hover': {
+              backgroundColor: alpha(theme.palette.primary.main, 0.4)
+            }
+          }}
+        />
+      )}
     </Box>
   );
 };

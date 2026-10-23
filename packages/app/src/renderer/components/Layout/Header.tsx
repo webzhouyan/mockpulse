@@ -68,19 +68,20 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings }) => {
           {activeEnvironment.name}
         </Typography>
 
-        {/* Pulse Dot (No redundant "已停止" label) */}
+        {/* Pulse Breathing Dot */}
         <Box
           sx={{
-            width: 8,
-            height: 8,
+            width: isRunning ? 8 : 7,
+            height: isRunning ? 8 : 7,
             borderRadius: '50%',
             backgroundColor: isRunning ? '#10b981' : theme.palette.text.disabled,
-            boxShadow: isRunning ? '0 0 0 2px rgba(16, 185, 129, 0.25)' : 'none',
-            transition: 'all 0.3s ease',
-            animation: isRunning ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none',
-            '@keyframes pulse': {
-              '0%, 100%': { opacity: 1 },
-              '50%': { opacity: 0.4 }
+            opacity: isRunning ? 1 : 0.4,
+            boxShadow: isRunning ? '0 0 0 0 rgba(16, 185, 129, 0.6)' : 'none',
+            animation: isRunning ? 'pulseGlow 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none',
+            '@keyframes pulseGlow': {
+              '0%': { transform: 'scale(0.95)', boxShadow: '0 0 0 0 rgba(16, 185, 129, 0.7)' },
+              '70%': { transform: 'scale(1)', boxShadow: '0 0 0 6px rgba(16, 185, 129, 0)' },
+              '100%': { transform: 'scale(0.95)', boxShadow: '0 0 0 0 rgba(16, 185, 129, 0)' }
             }
           }}
         />
@@ -102,15 +103,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings }) => {
 
       {/* Right: Master Control Switch (Merged) + Theme Mode + System Settings */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        {/* Merged Switch: 启动服务 / 停止 (端口 XXXX) */}
+        {/* Merged Switch: 启动服务 / 停止服务 (3000) */}
         <Button
           size="small"
           variant="contained"
-          color={isRunning ? 'error' : 'primary'}
           disabled={isStarting}
           startIcon={
             isRunning ? (
-              <StopRoundedIcon sx={{ fontSize: 16 }} />
+              <StopRoundedIcon sx={{ fontSize: 15 }} />
             ) : (
               <PlayArrowRoundedIcon sx={{ fontSize: 16 }} />
             )
@@ -118,24 +118,25 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings }) => {
           onClick={() => toggleServer(activeEnvironment.uuid)}
           sx={{
             height: 28,
-            px: 1.5,
+            px: 1.4,
             fontSize: '0.75rem',
             fontWeight: 700,
             borderRadius: 1.5,
             textTransform: 'none',
+            color: '#ffffff',
             boxShadow: isRunning
               ? '0 2px 6px rgba(239, 68, 68, 0.35)'
               : '0 2px 6px rgba(16, 185, 129, 0.35)',
-            backgroundColor: isRunning ? '#ef4444' : theme.palette.primary.main,
+            backgroundColor: isRunning ? '#ef4444' : '#10b981',
             '&:hover': {
-              backgroundColor: isRunning ? '#dc2626' : theme.palette.primary.dark
+              backgroundColor: isRunning ? '#dc2626' : '#059669'
             }
           }}
         >
           {isStarting
             ? '启动中...'
             : isRunning
-            ? `停止 (端口 ${activeEnvironment.port})`
+            ? `停止服务 (${activeEnvironment.port})`
             : '启动服务'}
         </Button>
 
@@ -144,7 +145,15 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings }) => {
           <IconButton
             size="small"
             onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')}
-            sx={{ width: 28, height: 28 }}
+            sx={{
+              width: 28,
+              height: 28,
+              color: theme.palette.text.secondary,
+              '&:hover': {
+                color: theme.palette.text.primary,
+                backgroundColor: alpha(theme.palette.text.primary, 0.06)
+              }
+            }}
           >
             {themeMode === 'light' ? (
               <Brightness4RoundedIcon sx={{ fontSize: 16 }} />
@@ -156,7 +165,19 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings }) => {
 
         {/* Global Settings Dialog */}
         <Tooltip title={t.settings.title} arrow>
-          <IconButton size="small" onClick={onOpenSettings} sx={{ width: 28, height: 28 }}>
+          <IconButton
+            size="small"
+            onClick={onOpenSettings}
+            sx={{
+              width: 28,
+              height: 28,
+              color: theme.palette.text.secondary,
+              '&:hover': {
+                color: theme.palette.text.primary,
+                backgroundColor: alpha(theme.palette.text.primary, 0.06)
+              }
+            }}
+          >
             <SettingsRoundedIcon sx={{ fontSize: 16 }} />
           </IconButton>
         </Tooltip>
