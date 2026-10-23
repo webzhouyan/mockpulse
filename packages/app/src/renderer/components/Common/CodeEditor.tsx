@@ -89,8 +89,9 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         height: '100%',
         width: '100%',
         borderRadius: isFullscreen ? 0 : 2,
-        border: isFullscreen ? 'none' : `1px solid ${theme.palette.divider}`,
+        border: isFullscreen ? 'none' : `1px solid ${alpha(theme.palette.divider, 0.45)}`,
         overflow: 'hidden',
+        boxShadow: isFullscreen ? 'none' : (theme.palette.mode === 'light' ? '0 1px 3px rgba(0,0,0,0.03)' : '0 1px 3px rgba(0,0,0,0.2)'),
         backgroundColor:
           theme.palette.mode === 'light' ? '#fbfcfe' : '#0d1117'
       }}
@@ -104,10 +105,10 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderBottom: `1px solid ${theme.palette.divider}`,
+          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.4)}`,
           backgroundColor:
             theme.palette.mode === 'light'
-              ? alpha(theme.palette.grey[100], 0.8)
+              ? alpha(theme.palette.grey[100], 0.7)
               : alpha(theme.palette.background.paper, 0.6)
         }}
       >

@@ -72,7 +72,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderBottom: `1px solid ${theme.palette.divider}`
+          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.45)}`
         }}
       >
         <Typography variant="subtitle1" sx={{ fontWeight: 700, fontSize: '0.95rem' }}>
@@ -318,28 +318,39 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
 
       <DialogActions
         sx={{
-          p: 1.5,
+          p: 1.8,
           px: 3,
-          borderTop: `1px solid ${theme.palette.divider}`,
-          justifyContent: 'flex-end'
+          borderTop: `1px solid ${alpha(theme.palette.divider, 0.45)}`,
+          justifyContent: 'flex-end',
+          backgroundColor:
+            theme.palette.mode === 'light'
+              ? alpha(theme.palette.grey[50], 0.6)
+              : alpha(theme.palette.background.default, 0.3)
         }}
       >
         <Button
-          variant="outlined"
-          size="small"
+          variant="contained"
+          size="medium"
           onClick={onClose}
+          disableElevation
           sx={{
-            px: 2.2,
-            py: 0.5,
-            borderRadius: 1.5,
+            px: 3.2,
+            py: 0.65,
+            borderRadius: 2,
             textTransform: 'none',
-            fontSize: '0.8rem',
+            fontSize: '0.82rem',
             fontWeight: 600,
-            borderColor: theme.palette.divider,
-            color: theme.palette.text.secondary,
+            backgroundColor: theme.palette.primary.main,
+            color: '#ffffff',
+            boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.28)}`,
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             '&:hover': {
-              borderColor: theme.palette.text.primary,
-              color: theme.palette.text.primary
+              backgroundColor: theme.palette.primary.dark,
+              boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.4)}`,
+              transform: 'translateY(-1px)'
+            },
+            '&:active': {
+              transform: 'translateY(0)'
             }
           }}
         >
