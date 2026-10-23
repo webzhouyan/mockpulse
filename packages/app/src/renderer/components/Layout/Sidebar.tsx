@@ -30,6 +30,7 @@ import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import { useApp } from '../../store/AppContext';
 import { useI18n } from '../../i18n';
 import { apiService } from '../../services/api.service';
+import { Resizer } from '../Common/Resizer';
 
 export const Sidebar: React.FC = () => {
   const theme = useTheme();
@@ -52,9 +53,10 @@ export const Sidebar: React.FC = () => {
   } = useApp();
 
   const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; uuid: string } | null>(null);
-
   const isCompact = layoutDensity === 'compact';
-  const sidebarWidth = isSidebarCollapsed ? 56 : isCompact ? 230 : 260;
+  const [customWidth, setCustomWidth] = useState(isCompact ? 220 : 250);
+
+  const sidebarWidth = isSidebarCollapsed ? 56 : customWidth;
 
   const handleMenuOpen = (e: React.MouseEvent<HTMLElement>, uuid: string) => {
     e.stopPropagation();
@@ -73,6 +75,7 @@ export const Sidebar: React.FC = () => {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
+        position: 'relative',
         borderRight: `1px solid ${theme.palette.divider}`,
         backgroundColor:
           theme.palette.mode === 'light'
@@ -463,6 +466,18 @@ export const Sidebar: React.FC = () => {
           {t.sidebar.deleteEnvironment}
         </MenuItem>
       </Menu>
+
+      {/* Draggable Resizer (only when not collapsed) */}
+      {!isSidebarCollapsed && (
+        <Box sx={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 4 }}>
+          <Resizer
+            width={customWidth}
+            onResize={setCustomWidth}
+            minWidth={170}
+            maxWidth={450}
+          />
+        </Box>
+      )}
     </Box>
   );
 };

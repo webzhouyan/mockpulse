@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -11,20 +11,26 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  Tooltip,
+  Snackbar,
+  Alert,
   alpha,
   useTheme
 } from '@mui/material';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
-import { useApp } from '../../store/AppContext';
+import RestartAltRoundedIcon from '@mui/icons-material/RestartAltRounded';
+import SecurityRoundedIcon from '@mui/icons-material/SecurityRounded';
+import { useApp, DEFAULT_GLOBAL_HEADERS } from '../../store/AppContext';
 import { useI18n } from '../../i18n';
 
 export const HeadersView: React.FC = () => {
   const theme = useTheme();
   const { t } = useI18n();
   const { activeEnvironment, updateActiveEnvironment, layoutDensity } = useApp();
-
   const isCompact = layoutDensity === 'compact';
+  const [feedback, setFeedback] = useState<string | null>(null);
+
   const headers = activeEnvironment?.headers || [];
 
   const handleAddHeader = () => {
@@ -48,28 +54,86 @@ export const HeadersView: React.FC = () => {
     }));
   };
 
+  // Add CORS headers as requested in original mockoon
+  const handleAddCORSHeaders = () => {
+    const corsList = [
+      { key: 'Access-Control-Allow-Origin', value: '*' },
+      { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS' },
+      { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Origin, Accept, Authorization, Content-Length, X-Requested-With' }
+    ];
+
+    updateActiveEnvironment((env) => {
+      const current = [...env.headers];
+      corsList.forEach((corsItem) => {
+        const existingIdx = current.findIndex((h) => h.key.toLowerCase() === corsItem.key.toLowerCase());
+        if (existingIdx !== -1) {
+          current[existingIdx] = corsItem;
+        } else {
+          current.push(corsItem);
+        }
+      });
+      return { ...env, headers: current };
+    });
+    setFeedback('已成功添加 / 补全 CORS 跨域响应头！');
+  };
+
+  // Reset to default 4 headers
+  const handleResetDefault = () => {
+    updateActiveEnvironment((env) => ({
+      ...env,
+      headers: [...DEFAULT_GLOBAL_HEADERS]
+    }));
+    setFeedback('已重置为原版默认全局响应头！');
+  };
+
   return (
     <Box sx={{ p: isCompact ? 2 : 3, height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Top Header & Actions */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
         <Box>
           <Typography variant="subtitle1" sx={{ fontWeight: 700, fontSize: isCompact ? '0.9rem' : '1.1rem' }}>
             {t.headers.title}
           </Typography>
-          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, mt: 0.3, display: 'block' }}>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, mt: 0.2, display: 'block' }}>
             {t.headers.subtitle}
           </Typography>
         </Box>
-        <Button
-          size="small"
-          variant="contained"
-          startIcon={<AddRoundedIcon sx={{ fontSize: 16 }} />}
-          onClick={handleAddHeader}
-          sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
-        >
-          {t.headers.addHeader}
-        </Button>
+
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Button
+            size="small"
+            variant="text"
+            color="primary"
+            startIcon={<SecurityRoundedIcon sx={{ fontSize: 16 }} />}
+            onClick={handleAddCORSHeaders}
+            sx={{ fontSize: '0.78rem', textTransform: 'none' }}
+          >
+            添加 CORS 跨域头 (add CORS headers)
+          </Button>
+
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<RestartAltRoundedIcon sx={{ fontSize: 16 }} />}
+            onClick={handleResetDefault}
+            sx={{ fontSize: '0.78rem' }}
+          >
+            重置为默认
+          </Button>
+
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={<AddRoundedIcon sx={{ fontSize: 16 }} />}
+            onClick={handleAddHeader}
+            sx={{ whiteSpace: 'nowrap' }}
+          >
+            {t.headers.addHeader}
+          </Button>
+        </Box>
       </Box>
 
+      {/* Headers Table */}
       <Paper variant="outlined" sx={{ overflow: 'hidden', mt: 0.5 }}>
         <Table size={isCompact ? 'small' : 'medium'}>
           <TableHead>
@@ -87,8 +151,9 @@ export const HeadersView: React.FC = () => {
                     fullWidth
                     size="small"
                     value={h.key}
-                    placeholder="Access-Control-Allow-Origin"
+                    placeholder="Header Name (e.g. Content-Type)"
                     onChange={(e) => handleUpdateHeader(i, e.target.value, h.value)}
+                    sx={{ '& input': { fontFamily: "'Fira Code', monospace", fontSize: '0.8rem' } }}
                   />
                 </TableCell>
                 <TableCell sx={{ py: isCompact ? 0.6 : 1 }}>
@@ -96,8 +161,9 @@ export const HeadersView: React.FC = () => {
                     fullWidth
                     size="small"
                     value={h.value}
-                    placeholder="*"
+                    placeholder="Header Value"
                     onChange={(e) => handleUpdateHeader(i, h.key, e.target.value)}
+                    sx={{ '& input': { fontFamily: "'Fira Code', monospace", fontSize: '0.8rem' } }}
                   />
                 </TableCell>
                 <TableCell align="center" sx={{ py: isCompact ? 0.6 : 1 }}>
@@ -117,6 +183,18 @@ export const HeadersView: React.FC = () => {
           </TableBody>
         </Table>
       </Paper>
+
+      {/* Feedback Snackbar */}
+      <Snackbar
+        open={Boolean(feedback)}
+        autoHideDuration={2000}
+        onClose={() => setFeedback(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="success" sx={{ width: '100%', py: 0.5, px: 2, fontSize: '0.85rem' }}>
+          {feedback}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

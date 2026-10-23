@@ -79,6 +79,13 @@ const DEFAULT_SETTINGS: Settings = {
   navTabsOrder: DEFAULT_NAV_TABS
 };
 
+export const DEFAULT_GLOBAL_HEADERS = [
+  { key: 'Content-Type', value: 'application/json' },
+  { key: 'Access-Control-Allow-Origin', value: '*' },
+  { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS' },
+  { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Origin, Accept, Authorization, Content-Length, X-Requested-With' }
+];
+
 const createDefaultEnvironment = (name = 'Local API'): Environment => {
   const uuid = 'env_' + Math.random().toString(36).substring(2, 10);
   return {
@@ -88,7 +95,7 @@ const createDefaultEnvironment = (name = 'Local API'): Environment => {
     endpointPrefix: '',
     latency: 0,
     port: 3000,
-    hostname: '0.0.0.0',
+    hostname: 'localhost',
     folders: [],
     routes: [
       {
@@ -140,7 +147,7 @@ const createDefaultEnvironment = (name = 'Local API'): Environment => {
       passphrase: ''
     },
     cors: true,
-    headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }],
+    headers: [...DEFAULT_GLOBAL_HEADERS],
     proxyReqHeaders: [],
     proxyResHeaders: [],
     data: [],

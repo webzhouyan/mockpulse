@@ -13,17 +13,33 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Button,
+  Snackbar,
+  Alert,
   alpha,
   useTheme
 } from '@mui/material';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import CallSplitRoundedIcon from '@mui/icons-material/CallSplitRounded';
+import CodeRoundedIcon from '@mui/icons-material/CodeRounded';
+import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import { Callback } from '@mockoon/commons';
 import { useApp } from '../../store/AppContext';
 import { useI18n } from '../../i18n';
+import { Resizer } from '../Common/Resizer';
 
-const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete'];
+const HTTP_METHODS = ['post', 'get', 'put', 'patch', 'delete', 'head', 'options'];
+
+const METHOD_COLORS: Record<string, string> = {
+  get: '#10b981',
+  post: '#3b82f6',
+  put: '#f59e0b',
+  patch: '#8b5cf6',
+  delete: '#ef4444',
+  head: '#06b6d4',
+  options: '#64748b'
+};
 
 export const CallbacksView: React.FC = () => {
   const theme = useTheme();
@@ -31,6 +47,9 @@ export const CallbacksView: React.FC = () => {
   const { activeEnvironment, updateActiveEnvironment, layoutDensity } = useApp();
 
   const isCompact = layoutDensity === 'compact';
+  const [leftWidth, setLeftWidth] = useState<number>(isCompact ? 260 : 300);
+  const [copiedSnackbar, setCopiedSnackbar] = useState(false);
+
   const callbacks = activeEnvironment?.callbacks || [];
   const [selectedId, setSelectedId] = useState<string | null>(callbacks[0]?.id || null);
 
@@ -74,13 +93,30 @@ export const CallbacksView: React.FC = () => {
     }));
   };
 
+  const handleFormatJson = () => {
+    if (!activeCallback || !activeCallback.body) return;
+    try {
+      const parsed = JSON.parse(activeCallback.body);
+      updateActive((c) => ({ ...c, body: JSON.stringify(parsed, null, 2) }));
+    } catch (e) {
+      // Ignored if not valid JSON
+    }
+  };
+
+  const handleCopyBody = () => {
+    if (!activeCallback || !activeCallback.body) return;
+    navigator.clipboard.writeText(activeCallback.body);
+    setCopiedSnackbar(true);
+  };
+
   return (
     <Box sx={{ display: 'flex', height: '100%', width: '100%', overflow: 'hidden' }}>
       {/* Callback List (Left) */}
       <Box
         sx={{
-          width: isCompact ? 260 : 300,
-          minWidth: isCompact ? 260 : 300,
+          width: leftWidth,
+          minWidth: 200,
+          maxWidth: 520,
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -88,7 +124,8 @@ export const CallbacksView: React.FC = () => {
           backgroundColor:
             theme.palette.mode === 'light'
               ? alpha(theme.palette.background.paper, 0.4)
-              : alpha(theme.palette.background.default, 0.5)
+              : alpha(theme.palette.background.default, 0.5),
+          position: 'relative'
         }}
       >
         <Box
@@ -139,6 +176,8 @@ export const CallbacksView: React.FC = () => {
           <List sx={{ p: 0 }}>
             {callbacks.map((cb) => {
               const isSelected = activeCallback?.id === cb.id;
+              const methodColor = METHOD_COLORS[cb.method.toLowerCase()] || '#64748b';
+
               return (
                 <ListItem
                   key={cb.id}
@@ -163,13 +202,29 @@ export const CallbacksView: React.FC = () => {
                     sx={{
                       borderRadius: 1.5,
                       py: isCompact ? 0.6 : 0.9,
-                      px: isCompact ? 1 : 1.2
+                      px: isCompact ? 1 : 1.2,
+                      gap: 1
                     }}
                   >
-                    <CallSplitRoundedIcon sx={{ fontSize: 16, mr: 1.2, color: theme.palette.secondary.main }} />
+                    <Box
+                      sx={{
+                        px: 0.6,
+                        py: 0.15,
+                        borderRadius: 0.8,
+                        fontSize: '0.62rem',
+                        fontWeight: 700,
+                        backgroundColor: alpha(methodColor, 0.15),
+                        color: methodColor,
+                        textTransform: 'uppercase',
+                        fontFamily: "'Fira Code', monospace",
+                        flexShrink: 0
+                      }}
+                    >
+                      {cb.method}
+                    </Box>
                     <ListItemText
                       primary={cb.name}
-                      secondary={`${cb.method.toUpperCase()} ${cb.uri}`}
+                      secondary={cb.uri}
                       primaryTypographyProps={{
                         fontWeight: isSelected ? 600 : 500,
                         fontSize: isCompact ? '0.78rem' : '0.85rem',
@@ -181,7 +236,8 @@ export const CallbacksView: React.FC = () => {
                         fontSize: '0.68rem',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        fontFamily: "'Fira Code', monospace"
                       }}
                     />
                   </ListItemButton>
@@ -190,11 +246,17 @@ export const CallbacksView: React.FC = () => {
             })}
           </List>
         </Box>
+
+        {/* Resizer */}
+        <Box sx={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 4 }}>
+          <Resizer width={leftWidth} onResize={setLeftWidth} minWidth={200} maxWidth={520} />
+        </Box>
       </Box>
 
       {/* Callback Editor (Right) */}
       {activeCallback ? (
-        <Box sx={{ flex: 1, p: isCompact ? 2 : 3, display: 'flex', flexDirection: 'column', gap: 1.5, overflowY: 'auto' }}>
+        <Box sx={{ flex: 1, p: isCompact ? 2 : 3, display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
+          {/* Row 1: Callback Name & Documentation */}
           <Box sx={{ display: 'flex', gap: 1.5 }}>
             <TextField
               size="small"
@@ -203,40 +265,118 @@ export const CallbacksView: React.FC = () => {
               onChange={(e) => updateActive((c) => ({ ...c, name: e.target.value }))}
               sx={{ flex: 1 }}
             />
-            <FormControl size="small" sx={{ width: 120 }}>
-              <InputLabel>{t.callbacks.callbackMethod}</InputLabel>
+            <TextField
+              size="small"
+              label={t.callbacks.documentation}
+              placeholder="Webhook 说明"
+              value={activeCallback.documentation || ''}
+              onChange={(e) => updateActive((c) => ({ ...c, documentation: e.target.value }))}
+              sx={{ flex: 1.5 }}
+            />
+          </Box>
+
+          {/* Row 2: Method Selector & URL Input (aligned perfectly) */}
+          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+            <FormControl size="small" sx={{ width: 130, flexShrink: 0 }}>
+              <InputLabel id="callback-method-label">{t.callbacks.callbackMethod}</InputLabel>
               <Select
+                labelId="callback-method-label"
+                id="callback-method-select"
                 value={activeCallback.method}
                 label={t.callbacks.callbackMethod}
                 onChange={(e) => updateActive((c) => ({ ...c, method: e.target.value as any }))}
+                renderValue={(val) => {
+                  const color = METHOD_COLORS[val.toLowerCase()] || '#64748b';
+                  return (
+                    <Box
+                      sx={{
+                        display: 'inline-block',
+                        px: 0.8,
+                        py: 0.1,
+                        borderRadius: 1,
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        backgroundColor: alpha(color, 0.15),
+                        color: color,
+                        textTransform: 'uppercase',
+                        fontFamily: "'Fira Code', monospace"
+                      }}
+                    >
+                      {val}
+                    </Box>
+                  );
+                }}
               >
-                {HTTP_METHODS.map((m) => (
-                  <MenuItem key={m} value={m} sx={{ textTransform: 'uppercase' }}>
-                    {m}
-                  </MenuItem>
-                ))}
+                {HTTP_METHODS.map((m) => {
+                  const color = METHOD_COLORS[m.toLowerCase()] || '#64748b';
+                  return (
+                    <MenuItem key={m} value={m}>
+                      <Box
+                        sx={{
+                          px: 0.8,
+                          py: 0.2,
+                          borderRadius: 1,
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          backgroundColor: alpha(color, 0.15),
+                          color: color,
+                          textTransform: 'uppercase',
+                          fontFamily: "'Fira Code', monospace"
+                        }}
+                      >
+                        {m}
+                      </Box>
+                    </MenuItem>
+                  );
+                })}
               </Select>
             </FormControl>
+
+            <TextField
+              fullWidth
+              size="small"
+              label={t.callbacks.callbackUrl}
+              placeholder="https://example.com/webhook"
+              value={activeCallback.uri}
+              onChange={(e) => updateActive((c) => ({ ...c, uri: e.target.value }))}
+              InputProps={{
+                sx: { fontFamily: "'Fira Code', monospace", fontSize: '0.85rem' }
+              }}
+            />
           </Box>
 
-          <TextField
-            fullWidth
-            size="small"
-            label={t.callbacks.callbackUrl}
-            value={activeCallback.uri}
-            onChange={(e) => updateActive((c) => ({ ...c, uri: e.target.value }))}
-          />
-
-          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '0.72rem' }}>
-            {t.callbacks.subtitle}
-          </Typography>
+          {/* Row 3: Body Header with Format & Copy tools */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+              {t.callbacks.callbackBody}
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<CodeRoundedIcon />}
+                onClick={handleFormatJson}
+                sx={{ textTransform: 'none', py: 0.2, px: 1, fontSize: '0.75rem' }}
+              >
+                {t.callbacks.formatJson}
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<ContentCopyRoundedIcon />}
+                onClick={handleCopyBody}
+                sx={{ textTransform: 'none', py: 0.2, px: 1, fontSize: '0.75rem' }}
+              >
+                {t.callbacks.copy}
+              </Button>
+            </Box>
+          </Box>
 
           <TextField
             fullWidth
             multiline
             minRows={12}
             maxRows={24}
-            label={t.callbacks.callbackBody}
             value={activeCallback.body}
             onChange={(e) => updateActive((c) => ({ ...c, body: e.target.value }))}
             sx={{
@@ -247,6 +387,17 @@ export const CallbacksView: React.FC = () => {
               }
             }}
           />
+
+          <Snackbar
+            open={copiedSnackbar}
+            autoHideDuration={2000}
+            onClose={() => setCopiedSnackbar(false)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
+            <Alert severity="success" sx={{ width: '100%', py: 0.5, fontSize: '0.8rem' }}>
+              {t.callbacks.copied}
+            </Alert>
+          </Snackbar>
         </Box>
       ) : (
         <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

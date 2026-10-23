@@ -3,21 +3,28 @@ import {
   Box,
   Typography,
   IconButton,
+  Button,
   TextField,
   Tooltip,
   List,
   ListItem,
   ListItemButton,
   ListItemText,
+  Snackbar,
+  Alert,
   alpha,
   useTheme
 } from '@mui/material';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import StorageRoundedIcon from '@mui/icons-material/StorageRounded';
+import AutoFixHighRoundedIcon from '@mui/icons-material/AutoFixHighRounded';
+import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import { DataBucket } from '@mockoon/commons';
 import { useApp } from '../../store/AppContext';
 import { useI18n } from '../../i18n';
+import { apiService } from '../../services/api.service';
+import { Resizer } from '../Common/Resizer';
 
 export const DataBucketsView: React.FC = () => {
   const theme = useTheme();
@@ -25,6 +32,9 @@ export const DataBucketsView: React.FC = () => {
   const { activeEnvironment, updateActiveEnvironment, layoutDensity } = useApp();
 
   const isCompact = layoutDensity === 'compact';
+  const [leftWidth, setLeftWidth] = useState(isCompact ? 260 : 300);
+  const [copyFeedback, setCopyFeedback] = useState(false);
+
   const dataBuckets = activeEnvironment?.data || [];
   const [selectedId, setSelectedId] = useState<string | null>(dataBuckets[0]?.id || null);
 
@@ -61,13 +71,29 @@ export const DataBucketsView: React.FC = () => {
     }));
   };
 
+  const handleFormat = () => {
+    if (!activeBucket || !activeBucket.value) return;
+    try {
+      const parsed = JSON.parse(activeBucket.value);
+      updateActive((b) => ({ ...b, value: JSON.stringify(parsed, null, 2) }));
+    } catch (e) {
+      // not JSON or contains template tags, keep as is
+    }
+  };
+
+  const handleCopy = () => {
+    if (!activeBucket) return;
+    apiService.writeClipboard(activeBucket.value || '');
+    setCopyFeedback(true);
+  };
+
   return (
-    <Box sx={{ display: 'flex', height: '100%', width: '100%', overflow: 'hidden' }}>
-      {/* Bucket List (Left) */}
+    <Box sx={{ display: 'flex', height: '100%', width: '100%', overflow: 'hidden', position: 'relative' }}>
+      {/* Bucket List (Left, resizable) */}
       <Box
         sx={{
-          width: isCompact ? 260 : 300,
-          minWidth: isCompact ? 260 : 300,
+          width: leftWidth,
+          minWidth: leftWidth,
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -75,13 +101,13 @@ export const DataBucketsView: React.FC = () => {
           backgroundColor:
             theme.palette.mode === 'light'
               ? alpha(theme.palette.background.paper, 0.4)
-              : alpha(theme.palette.background.default, 0.5)
+              : alpha(theme.palette.background.default, 0.5),
+          position: 'relative'
         }}
       >
-        {/* Header with optimized, non-wrapping compact Add Button */}
         <Box
           sx={{
-            p: isCompact ? 1.2 : 1.8,
+            p: isCompact ? 1 : 1.5,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -176,12 +202,18 @@ export const DataBucketsView: React.FC = () => {
             })}
           </List>
         </Box>
+
+        {/* Resizer */}
+        <Box sx={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 4 }}>
+          <Resizer width={leftWidth} onResize={setLeftWidth} minWidth={200} maxWidth={500} />
+        </Box>
       </Box>
 
       {/* Bucket Editor (Right) */}
       {activeBucket ? (
-        <Box sx={{ flex: 1, p: isCompact ? 2 : 3, display: 'flex', flexDirection: 'column', gap: 1.5, overflowY: 'auto' }}>
-          <Box sx={{ display: 'flex', gap: 1.5 }}>
+        <Box sx={{ flex: 1, p: isCompact ? 2 : 2.5, display: 'flex', flexDirection: 'column', gap: 1.5, overflowY: 'auto' }}>
+          {/* Row 1: Name and ID inputs perfectly aligned */}
+          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
             <TextField
               size="small"
               label={t.dataBuckets.bucketName}
@@ -198,9 +230,33 @@ export const DataBucketsView: React.FC = () => {
             />
           </Box>
 
-          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '0.72rem' }}>
-            {t.dataBuckets.subtitle}
-          </Typography>
+          {/* Subtitle & Format/Copy Toolbar */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '0.72rem' }}>
+              {t.dataBuckets.subtitle}
+            </Typography>
+
+            <Box sx={{ display: 'flex', gap: 0.8 }}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<AutoFixHighRoundedIcon sx={{ fontSize: 15 }} />}
+                onClick={handleFormat}
+                sx={{ fontSize: '0.75rem', py: 0.2 }}
+              >
+                格式化
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<ContentCopyRoundedIcon sx={{ fontSize: 14 }} />}
+                onClick={handleCopy}
+                sx={{ fontSize: '0.75rem', py: 0.2 }}
+              >
+                复制
+              </Button>
+            </Box>
+          </Box>
 
           <TextField
             fullWidth
@@ -226,6 +282,18 @@ export const DataBucketsView: React.FC = () => {
           </Typography>
         </Box>
       )}
+
+      {/* Copy Feedback */}
+      <Snackbar
+        open={copyFeedback}
+        autoHideDuration={2000}
+        onClose={() => setCopyFeedback(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="success" sx={{ width: '100%', py: 0.5, px: 2, fontSize: '0.85rem' }}>
+          数据桶模板已成功复制到剪贴板！
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

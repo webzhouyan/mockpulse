@@ -89,6 +89,10 @@ export const zh = {
     callbackUrl: '回调 URL 地址',
     callbackMethod: '请求方法',
     callbackBody: '请求体内容',
+    documentation: '回调说明 (Documentation)',
+    formatJson: '格式化 JSON',
+    copy: '复制内容',
+    copied: '已复制到剪贴板',
     noCallbacks: '暂无回调配置。'
   },
   logs: {
@@ -117,14 +121,26 @@ export const zh = {
   },
   envSettings: {
     title: '环境基础设置',
+    subtitle: '配置本地模拟服务器的监听主机、端口、全局延迟及网络安全选项。',
     name: '环境名称',
+    nameDesc: '为当前环境命名，便于在多套 Mock 接口间快速区分与管理。',
     port: '服务监听端口',
+    portDesc: 'MockPulse 本地服务器监听的 HTTP/HTTPS 端口号（例如 3000）。请确保该端口未被其他程序占用。',
+    hostname: '服务器监听地址 (Hostname)',
+    hostnameDesc: '服务器监听的主机名或 IP。默认为 localhost（仅本机访问）。如需在局域网内共享或真机调试，可设置为 0.0.0.0。',
+    hostnamePlaceholder: 'localhost 或 0.0.0.0',
     endpointPrefix: '全局前缀 (例如: api/v1)',
+    endpointPrefixDesc: '为该环境下所有接口自动拼接的统一路径前缀（如 api/v1）。前导斜杠可选。',
     latency: '全局默认延迟 (ms)',
+    latencyDesc: '为所有路由接口响应添加的默认等待延迟（毫秒）。可在具体路由响应中单独覆盖此设置。',
     cors: '自动开启 CORS 跨域支持',
+    corsDesc: '自动拦截并返回 OPTIONS 预检请求（200 OK），并在所有响应中附带跨域头，以支持浏览器端跨域 Ajax/Fetch 请求。',
     tls: '启用 HTTPS / TLS 证书支持',
+    tlsDesc: '启用基于 HTTPS 的本地加密安全连接。需要提供有效的 PEM 或 PFX 格式的 SSL 证书与私钥文件。',
     certPath: '证书文件路径 (Cert)',
-    keyPath: '私钥文件路径 (Key)'
+    certPathDesc: 'SSL / TLS 证书文件路径（.crt 或 .pem 格式）。',
+    keyPath: '私钥文件路径 (Key)',
+    keyPathDesc: 'SSL / TLS 私钥文件路径（.key 或 .pem 格式）。'
   },
   settings: {
     title: '应用系统设置',

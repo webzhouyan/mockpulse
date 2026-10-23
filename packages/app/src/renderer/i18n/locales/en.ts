@@ -89,6 +89,10 @@ export const en = {
     callbackUrl: 'Target URL',
     callbackMethod: 'Method',
     callbackBody: 'Payload Body',
+    documentation: 'Documentation',
+    formatJson: 'Format JSON',
+    copy: 'Copy Body',
+    copied: 'Copied to clipboard',
     noCallbacks: 'No callbacks configured.'
   },
   logs: {
@@ -117,14 +121,26 @@ export const en = {
   },
   envSettings: {
     title: 'Environment Settings',
+    subtitle: 'Configure bind host, port, latency, and security settings for this mock server.',
     name: 'Environment Name',
+    nameDesc: 'Friendly name to identify this mock environment.',
     port: 'Port',
+    portDesc: 'Server port (e.g. 3000) that MockPulse will listen on.',
+    hostname: 'Server Bind Address (Hostname)',
+    hostnameDesc: 'Host/IP the mock server binds to. Default is localhost. Set to 0.0.0.0 to allow LAN access.',
+    hostnamePlaceholder: 'localhost or 0.0.0.0',
     endpointPrefix: 'Global Prefix (e.g. api/v1)',
+    endpointPrefixDesc: 'Uniform prefix automatically prepended to all route endpoints.',
     latency: 'Default Latency (ms)',
+    latencyDesc: 'Default response delay applied to all routes in this environment.',
     cors: 'Enable CORS',
+    corsDesc: 'Automatically respond to pre-flight OPTIONS requests (200 OK) and inject CORS headers.',
     tls: 'Enable HTTPS / TLS',
+    tlsDesc: 'Serve mock responses over secure HTTPS using SSL certificates.',
     certPath: 'Certificate Path',
-    keyPath: 'Key Path'
+    certPathDesc: 'Path to SSL/TLS certificate (.crt or .pem).',
+    keyPath: 'Key Path',
+    keyPathDesc: 'Path to SSL/TLS private key (.key or .pem).'
   },
   settings: {
     title: 'Application Settings',

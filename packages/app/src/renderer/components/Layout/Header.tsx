@@ -142,8 +142,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings }) => {
         overflow: 'hidden'
       }}
     >
-      {/* Left: Environment Name & Status */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0, minWidth: 140 }}>
+      {/* Left: Environment Name & Status (Auto-adapts to text length without empty gaps) */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexShrink: 0, pr: 1.2, borderRight: `1px solid ${theme.palette.divider}` }}>
         <Typography
           variant="subtitle2"
           sx={{
@@ -151,7 +151,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings }) => {
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
-            maxWidth: 140,
+            maxWidth: 160,
             fontSize: isCompact ? '0.8rem' : '0.875rem'
           }}
         >
@@ -172,7 +172,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings }) => {
         />
       </Box>
 
-      {/* Middle: Draggable & Scrollable Tabs (Supports drag-and-drop to reorder, compact font) */}
+      {/* Middle: Draggable & Scrollable Tabs (Expanded immediately next to environment info) */}
       <Box
         sx={{
           flex: 1,
@@ -181,6 +181,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings }) => {
           alignItems: 'center',
           gap: 0.5,
           overflowX: 'auto',
+          px: 0.5,
           py: 0.2,
           '&::-webkit-scrollbar': { height: 3 }
         }}
