@@ -57,5 +57,6 @@ export const setPaths = () => {
 export const showFolderInExplorer = (
   name: Parameters<typeof app.getPath>[0]
 ) => {
-  shell.showItemInFolder(app.getPath(name));
+  const folderPath = app.getPath(name);
+  shell.openPath(folderPath);
 };

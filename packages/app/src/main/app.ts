@@ -13,6 +13,8 @@ import { ServerInstance } from 'src/main/libs/server-management';
 declare const IS_TESTING: boolean;
 declare const IS_DEV: boolean;
 
+app.name = 'MockPulse';
+
 parseRuntimeArgs();
 
 setPaths();

@@ -20,11 +20,15 @@ export type ServerEventCallback = (
 class ApiService {
   private hasElectron = typeof window !== 'undefined' && !!window.api;
   private serverEventListeners: ServerEventCallback[] = [];
+  private menuEventListeners: ((action: string) => void)[] = [];
 
   constructor() {
     if (this.hasElectron && window.api?.receive) {
       window.api.receive('APP_SERVER_EVENT', (uuid: string, event: any, data: any) => {
         this.serverEventListeners.forEach((cb) => cb(uuid, event, data));
+      });
+      window.api.receive('APP_MENU', (action: string) => {
+        this.menuEventListeners.forEach((cb) => cb(action));
       });
     }
   }
@@ -34,6 +38,24 @@ class ApiService {
     return () => {
       this.serverEventListeners = this.serverEventListeners.filter((cb) => cb !== callback);
     };
+  }
+
+  public onMenuEvent(callback: (action: string) => void) {
+    this.menuEventListeners.push(callback);
+    return () => {
+      this.menuEventListeners = this.menuEventListeners.filter((cb) => cb !== callback);
+    };
+  }
+
+  public updateMenuState(state: {
+    environmentsCount: number;
+    hasActiveEnvironment: boolean;
+    activeEnvironmentRoutesCount: number;
+    isActiveEnvironmentEditable: boolean;
+  }) {
+    if (this.hasElectron && window.api?.send) {
+      window.api.send('APP_UPDATE_MENU_STATE', state);
+    }
   }
 
   // --- Settings ---
