@@ -6,20 +6,16 @@ const commonConfig = require('./electron-builder.common');
  */
 const config = Object.assign({}, commonConfig, {
   linux: {
-    executableName: 'mockoon',
+    executableName: 'mockpulse',
     syncDesktopName: true,
     target: [
       {
         target: 'AppImage',
-        arch: ['x64', 'arm64']
-      },
-      {
-        target: 'snap',
         arch: ['x64']
       },
       {
         target: 'deb',
-        arch: ['x64', 'arm64']
+        arch: ['x64']
       },
       {
         target: 'rpm',
@@ -28,28 +24,17 @@ const config = Object.assign({}, commonConfig, {
     ],
     category: 'Development',
     icon: 'build-res',
-    artifactName: 'mockoon-${version}.${arch}.${ext}',
+    artifactName: 'MockPulse-${version}.${arch}.${ext}',
     desktop: {
       entry: {
-        Name: 'Mockoon',
+        Name: 'MockPulse',
         Type: 'Application',
         Categories: 'Development'
       }
     }
   },
   rpm: {
-    // Avoid /usr/lib/.build-id collisions with other Electron RPMs.
     fpm: ['--rpm-rpmbuild-define', '_build_id_links none']
-  },
-  snapcraft: {
-    base: 'core24',
-    core24: {
-      confinement: 'strict',
-      plugs: ['default'],
-      // fix multiple "permission denied"
-      executableArgs: ['--no-sandbox', '--disable-dev-shm-usage'],
-      useLXD: true
-    }
   }
 });
 

@@ -5,24 +5,22 @@ const commonConfig = require('./electron-builder.common');
  * @see https://www.electron.build/configuration/configuration
  */
 const config = Object.assign({}, commonConfig, {
-  forceCodeSigning: true,
   win: {
-    target: [{ target: 'nsis' }, { target: 'portable' }],
-    azureSignOptions: {
-      publisherName: '1kB SARL-S',
-      endpoint: 'https://eus.codesigning.azure.net',
-      // respect casing
-      certificateProfileName: 'Mockoon',
-      codeSigningAccountName: 'mockoon',
-      TimestampRfc3161: 'http://timestamp.acs.microsoft.com',
-      TimestampDigest: 'SHA256'
-    }
+    target: [
+      { target: 'nsis', arch: ['x64'] },
+      { target: 'portable', arch: ['x64'] }
+    ],
+    icon: 'build-res/icon.ico'
   },
   nsis: {
-    artifactName: 'mockoon.setup.${version}.${ext}'
+    artifactName: 'MockPulse.setup.${version}.${ext}',
+    oneClick: false,
+    allowToChangeInstallationDirectory: true,
+    createDesktopShortcut: true,
+    createStartMenuShortcut: true
   },
   portable: {
-    artifactName: 'mockoon.portable.${version}.${ext}'
+    artifactName: 'MockPulse.portable.${version}.${ext}'
   }
 });
 

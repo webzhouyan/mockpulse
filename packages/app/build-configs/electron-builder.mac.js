@@ -9,28 +9,20 @@ const config = Object.assign({}, commonConfig, {
     target: [
       {
         target: 'dmg',
-        arch: ['universal']
+        arch: ['arm64', 'x64']
       },
       {
-        target: 'dmg',
-        arch: ['x64']
-      },
-      {
-        target: 'dmg',
-        arch: ['arm64']
+        target: 'zip',
+        arch: ['arm64', 'x64']
       }
     ],
+    identity: null,
     type: 'distribution',
-    artifactName: 'MockPulse.setup.${version}.${arch}.${ext}',
-    hardenedRuntime: true,
-    gatekeeperAssess: false,
-    entitlements: 'build-res/entitlements.mac.plist',
-    entitlementsInherit: 'build-res/entitlements.mac.plist'
+    artifactName: 'MockPulse.setup.${version}.${arch}.${ext}'
   },
   dmg: {
     sign: false
-  },
-  afterSign: 'scripts/notarize.js'
+  }
 });
 
 module.exports = config;

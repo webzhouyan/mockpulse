@@ -1,0 +1,150 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release Tag (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-package:
+    name: Build & Package (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win
+            package-cmd: npm --prefix packages/app run package:win
+          - os: macos-latest
+            platform: mac
+            package-cmd: npm --prefix packages/app run package:mac:unsigned
+          - os: ubuntu-latest
+            platform: linux
+            package-cmd: npm --prefix packages/app run package:linux
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm libarchive-tools
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build common libraries
+        run: npm run build:libs
+
+      - name: Build desktop production bundle
+        run: npm run build:desktop:prod
+
+      - name: Package desktop application (${{ matrix.platform }})
+        run: ${{ matrix.package-cmd }}
+
+      - name: Upload packaging artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.platform }}
+          path: |
+            packages/app/packages/*.exe
+            packages/app/packages/*.dmg
+            packages/app/packages/*.zip
+            packages/app/packages/*.AppImage
+            packages/app/packages/*.deb
+            packages/app/packages/*.rpm
+            packages/app/packages/*.blockmap
+            packages/app/packages/*.yml
+          if-no-files-found: warn
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: build-and-package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine Release Tag
+        id: release_tag
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./dist-release
+          pattern: release-*
+          merge-multiple: true
+
+      - name: Generate SHA256 Checksums
+        working-directory: ./dist-release
+        run: |
+          sha256sum * > SHA256SUMS.txt 2>/dev/null || true
+          ls -la
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.release_tag.outputs.tag }}
+          name: MockPulse ${{ steps.release_tag.outputs.tag }}
+          draft: false
+          prerelease: false
+          files: |
+            ./dist-release/*
+          body: |
+            ## 🚀 MockPulse ${{ steps.release_tag.outputs.tag }} 正式发布！
+
+            MockPulse 是基于开源项目 [Mockoon](https://github.com/mockoon/mockoon) 进行深度现代化二次开发的离线优先桌面端 API 模拟开发工具。
+            
+            ### 📦 安装包下载 (Downloads)
+
+            | 操作系统 | 安装包格式 | 说明 |
+            | :--- | :--- | :--- |
+            | 🪟 **Windows (x64)** | `MockPulse.setup.1.0.0.exe` | 标准安装程序（支持自定义安装路径） |
+            | 🪟 **Windows (x64)** | `MockPulse.portable.1.0.0.exe` | 绿色便携版免安装，解压直接运行 |
+            | 🍎 **macOS (Apple Silicon)** | `MockPulse.setup.1.0.0.arm64.dmg` | 适用于 M1/M2/M3/M4 系列 Mac |
+            | 🍎 **macOS (Intel)** | `MockPulse.setup.1.0.0.x64.dmg` | 适用于 Intel 架构 Mac |
+            | 🐧 **Linux (x64)** | `MockPulse-1.0.0.x86_64.AppImage` | 通用独立可执行文件，双击即运行 |
+            | 🐧 **Linux (Debian/Ubuntu)** | `MockPulse-1.0.0.amd64.deb` | `sudo dpkg -i MockPulse-1.0.0.amd64.deb` |
+            | 🐧 **Linux (Fedora/RHEL)** | `MockPulse-1.0.0.x86_64.rpm` | `sudo rpm -ivh MockPulse-1.0.0.x86_64.rpm` |
+
+            ---
+
+            ### ✨ 核心功能亮点
+
+            - ⚡ **离线优先，数据本地化**：无需联网、无需注册账号，所有环境与 Mock 数据完全存储于本地 JSON 文件中。
+            - 🎨 **极速现代交互**：React 19 + Material-UI (MUI v9) 现代界面，支持流畅的明暗主题与自适应紧凑排版。
+            - 📑 **OpenAPI / Swagger 深度互通**：100% 支持 OpenAPI v2/v3 (JSON/YAML) 无缝导入与导出。
+            - 🗄️ **REST / CRUD / WebSocket 全覆盖**：支持丰富状态码规则与回调 Webhook、数据桶动态 CRUD 自动路由、以及 WebSocket 长连接流式推送。
+            - 🔄 **完美向下兼容**：底层完全兼容 Mockoon 官方数据结构，无缝打开旧项目。
+
+            ---
+            *鸣谢：本项目的核心引擎与数据结构源自 [Mockoon](https://github.com/mockoon/mockoon)（遵循 MIT 协议）。*
