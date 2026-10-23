@@ -1361,10 +1361,10 @@ export const RoutesView: React.FC = () => {
       </Box>
 
       {/* 5. Sub-Tab Panels (Fills remaining height) */}
-      <Box sx={{ flex: 1, p: 1.2, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <Box sx={{ flex: 1, minHeight: 0, p: 1.2, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Panel 0: Body Editor (With integrated CodeEditor, Gutter & Format/Copy Toolbar) */}
         {responseSubTab === 0 && (
-          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+          <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
             {activeResponse.bodyType === 'INLINE' && (
               <CodeEditor
                 value={activeResponse.body || ''}

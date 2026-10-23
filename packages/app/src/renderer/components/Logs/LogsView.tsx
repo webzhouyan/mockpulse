@@ -62,6 +62,26 @@ const formatHeadersText = (headers: Header[] = []): string => {
   return headers.map((h) => `${h.key}: ${h.value}`).join('\n');
 };
 
+const formatBodyContent = (body: any): string => {
+  if (!body) return '';
+  if (typeof body === 'object') {
+    try {
+      return JSON.stringify(body, null, 2);
+    } catch {
+      return String(body);
+    }
+  }
+  if (typeof body === 'string') {
+    try {
+      const parsed = JSON.parse(body);
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      return body;
+    }
+  }
+  return String(body);
+};
+
 export const LogsView: React.FC = () => {
   const theme = useTheme();
   const { t, locale } = useI18n();
@@ -782,12 +802,7 @@ export const LogsView: React.FC = () => {
                       <Tooltip title="复制 Body" arrow>
                         <IconButton
                           size="small"
-                          onClick={() => {
-                            const b = typeof activeTx.request?.body === 'string'
-                              ? activeTx.request.body
-                              : JSON.stringify(activeTx.request.body, null, 2);
-                            copyToClipboard(b);
-                          }}
+                          onClick={() => copyToClipboard(formatBodyContent(activeTx.request.body))}
                           sx={{ p: 0.3 }}
                         >
                           <ContentCopyRoundedIcon sx={{ fontSize: 14 }} />
@@ -798,7 +813,7 @@ export const LogsView: React.FC = () => {
 
                   <Collapse in={openReqBody}>
                     <Divider />
-                    <Box sx={{ p: 1.5 }}>
+                    <Box sx={{ p: 1.5, maxHeight: 600, overflowY: 'auto', overflowX: 'auto' }}>
                       {activeTx.request?.body ? (
                         <Box
                           component="pre"
@@ -811,9 +826,7 @@ export const LogsView: React.FC = () => {
                             color: theme.palette.text.primary
                           }}
                         >
-                          {typeof activeTx.request.body === 'string'
-                            ? activeTx.request.body
-                            : JSON.stringify(activeTx.request.body, null, 2)}
+                          {formatBodyContent(activeTx.request.body)}
                         </Box>
                       ) : (
                         <Typography sx={{ color: theme.palette.text.disabled, fontSize: '0.74rem', fontStyle: 'italic' }}>
@@ -1035,7 +1048,7 @@ export const LogsView: React.FC = () => {
                         <Tooltip title="复制 Body" arrow>
                           <IconButton
                             size="small"
-                            onClick={() => copyToClipboard(activeTx.response.body)}
+                            onClick={() => copyToClipboard(formatBodyContent(activeTx.response.body))}
                             sx={{ p: 0.3 }}
                           >
                             <ContentCopyRoundedIcon sx={{ fontSize: 14 }} />
@@ -1047,7 +1060,7 @@ export const LogsView: React.FC = () => {
 
                   <Collapse in={openResBody}>
                     <Divider />
-                    <Box sx={{ p: 1.5, maxHeight: 360, overflowY: 'auto' }}>
+                    <Box sx={{ p: 1.5, maxHeight: 600, overflowY: 'auto', overflowX: 'auto' }}>
                       {activeTx.response?.body ? (
                         <Box
                           component="pre"
@@ -1060,7 +1073,7 @@ export const LogsView: React.FC = () => {
                             color: theme.palette.text.primary
                           }}
                         >
-                          {activeTx.response.body}
+                          {formatBodyContent(activeTx.response.body)}
                         </Box>
                       ) : (
                         <Typography sx={{ color: theme.palette.text.disabled, fontSize: '0.74rem', fontStyle: 'italic' }}>

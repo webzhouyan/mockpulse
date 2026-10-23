@@ -80,6 +80,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
+        minHeight: 0,
         width: '100%',
         borderRadius: isFullscreen ? 0 : 2,
         border: isFullscreen ? 'none' : `1px solid ${theme.palette.divider}`,
@@ -179,14 +180,34 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         sx={{
           flex: 1,
           height: 'calc(100% - 36px)',
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
           overflow: 'hidden',
-          '& .cm-editor': {
+          position: 'relative',
+          '& .cm-theme': {
             height: '100%',
+            width: '100%',
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column'
+          },
+          '& .cm-editor': {
+            height: '100% !important',
+            width: '100%',
+            flex: 1,
+            minHeight: 0,
             fontFamily: "'Fira Code', 'JetBrains Mono', Consolas, monospace",
             fontSize: '0.82rem'
           },
           '& .cm-scroller': {
-            overflow: 'auto',
+            height: '100% !important',
+            minHeight: 0,
+            overflow: 'auto !important',
+            fontFamily: "'Fira Code', 'JetBrains Mono', Consolas, monospace"
+          },
+          '& .cm-content': {
             fontFamily: "'Fira Code', 'JetBrains Mono', Consolas, monospace"
           },
           '& .cm-gutters': {
@@ -201,6 +222,15 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         <CodeMirror
           value={value}
           height="100%"
+          style={{
+            height: '100%',
+            width: '100%',
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+          className="cm-theme"
           theme={cmTheme}
           extensions={extensions}
           onChange={(val) => onChange(val)}
@@ -230,7 +260,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   );
 
   return (
-    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+    <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       {/* Normal mode */}
       {!isFullscreen && editorContent}
 
