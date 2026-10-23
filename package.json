@@ -2,6 +2,10 @@
   "name": "mockpulse",
   "private": true,
   "version": "1.0.0",
+  "author": {
+    "name": "webzhouyan",
+    "email": "zhouyan_9999@126.com"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",

@@ -5,7 +5,13 @@
 const config = {
   appId: 'com.mockpulse.desktop',
   productName: 'MockPulse',
-  extraMetadata: { name: 'mockpulse' },
+  extraMetadata: {
+    name: 'mockpulse',
+    author: {
+      name: 'webzhouyan',
+      email: 'zhouyan_9999@126.com'
+    }
+  },
   directories: {
     output: 'packages',
     buildResources: 'build-res'

@@ -7,6 +7,7 @@ const commonConfig = require('./electron-builder.common');
 const config = Object.assign({}, commonConfig, {
   linux: {
     executableName: 'mockpulse',
+    maintainer: 'webzhouyan <zhouyan_9999@126.com>',
     syncDesktopName: true,
     target: [
       {

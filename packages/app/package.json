@@ -2,6 +2,10 @@
   "name": "@mockpulse/app",
   "description": "MockPulse is the modern, offline-first local API mock and simulation toolkit built with React and Material-UI.",
   "version": "1.0.0",
+  "author": {
+    "name": "webzhouyan",
+    "email": "zhouyan_9999@126.com"
+  },
   "private": true,
   "license": "MIT",
   "desktopName": "com.mockpulse.desktop",
