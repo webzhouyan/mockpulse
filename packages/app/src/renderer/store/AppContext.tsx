@@ -52,6 +52,9 @@ interface AppContextType {
   setSelectedRouteUuid: (uuid: string | null) => void;
   addRoute: (type?: 'http' | 'crud' | 'ws') => void;
   duplicateRoute: (uuid: string) => void;
+  duplicateRouteToEnvironment: (routeUuid: string, targetEnvUuid: string) => Promise<void>;
+  toggleRoute: (routeUuid: string) => Promise<void>;
+  isRouteDisabled: (routeUuid: string) => boolean;
   deleteRoute: (uuid: string) => void;
   addFolder: (name?: string) => void;
   updateFolder: (folderUuid: string, partial: Partial<Folder>) => void;
@@ -986,6 +989,83 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     [activeEnvironment, updateActiveEnvironment]
   );
 
+  // Duplicate Route to another environment
+  const duplicateRouteToEnvironment = useCallback(
+    async (routeUuid: string, targetEnvUuid: string) => {
+      if (!activeEnvironment) return;
+      const routeToCopy = activeEnvironment.routes.find((r) => r.uuid === routeUuid);
+      if (!routeToCopy) return;
+
+      const targetEnv = environments.find((e) => e.uuid === targetEnvUuid);
+      if (!targetEnv) return;
+
+      const duplicated: Route = {
+        ...JSON.parse(JSON.stringify(routeToCopy)),
+        uuid: 'route_' + Math.random().toString(36).substring(2, 10),
+        responses: (routeToCopy.responses || []).map((resp: any) => ({
+          ...resp,
+          uuid: 'resp_' + Math.random().toString(36).substring(2, 10)
+        }))
+      };
+
+      const updatedTargetEnv: Environment = {
+        ...targetEnv,
+        routes: [...targetEnv.routes, duplicated],
+        rootChildren: [
+          ...(targetEnv.rootChildren || []),
+          { type: 'route', uuid: duplicated.uuid }
+        ]
+      };
+
+      const targetDesc = settings?.environments.find((d) => d.uuid === targetEnvUuid);
+      if (targetDesc) {
+        await apiService.writeEnvironment(updatedTargetEnv, targetDesc, true);
+      }
+
+      setEnvironments((prev) =>
+        prev.map((e) => (e.uuid === targetEnvUuid ? updatedTargetEnv : e))
+      );
+    },
+    [activeEnvironment, environments, settings]
+  );
+
+  // Toggle route disabled / enabled state
+  const toggleRoute = useCallback(
+    async (routeUuid: string) => {
+      if (!activeEnvironment || !settings) return;
+      const envUuid = activeEnvironment.uuid;
+      const currentDisabled = settings.disabledRoutes?.[envUuid] || [];
+      const isCurrentlyDisabled = currentDisabled.includes(routeUuid);
+      const nextDisabled = isCurrentlyDisabled
+        ? currentDisabled.filter((id) => id !== routeUuid)
+        : [...currentDisabled, routeUuid];
+
+      const nextDisabledRoutes = {
+        ...(settings.disabledRoutes || {}),
+        [envUuid]: nextDisabled
+      };
+
+      const nextSettings: Settings = {
+        ...settings,
+        disabledRoutes: nextDisabledRoutes
+      };
+
+      setSettings(nextSettings);
+      apiService.updateDisabledRoutes(nextDisabledRoutes);
+      await apiService.writeSettings(nextSettings);
+    },
+    [activeEnvironment, settings]
+  );
+
+  const isRouteDisabled = useCallback(
+    (routeUuid: string) => {
+      if (!activeEnvironment || !settings?.disabledRoutes) return false;
+      const disabledList = settings.disabledRoutes[activeEnvironment.uuid] || [];
+      return disabledList.includes(routeUuid);
+    },
+    [activeEnvironment, settings]
+  );
+
   // Add Folder
   const addFolder = useCallback(
     (name = 'New folder') => {
@@ -1092,6 +1172,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         setSelectedRouteUuid,
         addRoute,
         duplicateRoute,
+        duplicateRouteToEnvironment,
+        toggleRoute,
+        isRouteDisabled,
         deleteRoute,
         addFolder,
         updateFolder,

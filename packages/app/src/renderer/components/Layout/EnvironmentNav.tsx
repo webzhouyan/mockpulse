@@ -19,6 +19,8 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  Snackbar,
+  Alert,
   alpha,
   useTheme,
   InputAdornment
@@ -39,6 +41,11 @@ import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import FolderRoundedIcon from '@mui/icons-material/FolderRounded';
 import FolderOpenRoundedIcon from '@mui/icons-material/FolderOpenRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
+import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
+import DriveFileMoveOutlinedIcon from '@mui/icons-material/DriveFileMoveOutlined';
+import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
+import LinkRoundedIcon from '@mui/icons-material/LinkRounded';
+import PowerSettingsNewRoundedIcon from '@mui/icons-material/PowerSettingsNewRounded';
 import {
   Route,
   Folder,
@@ -70,8 +77,9 @@ interface DropIndicator {
 
 export const EnvironmentNav: React.FC = () => {
   const theme = useTheme();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const {
+    environments,
     activeEnvironment,
     updateActiveEnvironment,
     activeTabKey,
@@ -80,6 +88,9 @@ export const EnvironmentNav: React.FC = () => {
     setSelectedRouteUuid,
     addRoute,
     duplicateRoute,
+    duplicateRouteToEnvironment,
+    toggleRoute,
+    isRouteDisabled,
     deleteRoute,
     addFolder,
     updateFolder,
@@ -94,6 +105,18 @@ export const EnvironmentNav: React.FC = () => {
   const [search, setSearch] = useState('');
   const [isResizing, setIsResizing] = useState(false);
   const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
+
+  // Route context/action menu (1:1 with original Mockoon)
+  const [routeMenuState, setRouteMenuState] = useState<{
+    el: HTMLElement;
+    route: Route;
+  } | null>(null);
+
+  // Duplicate to other environment dialog
+  const [targetEnvPickerRoute, setTargetEnvPickerRoute] = useState<Route | null>(null);
+
+  // Feedback Toast
+  const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 
   // Rename folder dialog
   const [editingFolder, setEditingFolder] = useState<{ uuid: string; name: string } | null>(null);
@@ -379,6 +402,7 @@ export const EnvironmentNav: React.FC = () => {
     const isDragging = !!draggingItem && draggingItem.id === route.uuid;
     const isDropBefore = !!dropIndicator && !!route.uuid && dropIndicator.targetId === route.uuid && dropIndicator.position === 'BEFORE';
     const isDropAfter = !!dropIndicator && !!route.uuid && dropIndicator.targetId === route.uuid && dropIndicator.position === 'AFTER';
+    const isDisabled = isRouteDisabled(route.uuid);
 
     const methodKey = (route.type === 'crud' ? 'crud' : route.type === 'ws' ? 'ws' : route.method || 'get').toLowerCase();
     const methodCfg = METHOD_COLORS[methodKey] || METHOD_COLORS.get;
@@ -394,51 +418,41 @@ export const EnvironmentNav: React.FC = () => {
         onDragEnd={handleDragEnd}
         onDragOver={(e) => handleDragOverItem(e, route.uuid, false, parentFolderUuid)}
         onDrop={(e) => handleDropOnItem(e, route.uuid, false, parentFolderUuid)}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setRouteMenuState({ el: e.currentTarget, route });
+        }}
         secondaryAction={
           <Box
             className="route-actions"
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 0.3,
               opacity: isSelected ? 0.9 : 0,
               transition: 'opacity 0.2s ease',
               pr: 0.2
             }}
           >
-            {/* Duplicate Route Button */}
-            <Tooltip title={t.nav.duplicateRoute} arrow>
+            {/* Context/Action Menu Trigger (⋮ 1:1 with original Mockoon) */}
+            <Tooltip title={locale === 'zh-CN' ? '更多接口操作 (Duplicate / Copy / Toggle / Delete)' : 'Route options'} arrow>
               <IconButton
                 size="small"
                 onClick={(e) => {
                   e.stopPropagation();
-                  duplicateRoute(route.uuid);
+                  setRouteMenuState({ el: e.currentTarget, route });
                 }}
                 sx={{
                   p: 0.4,
+                  borderRadius: 1,
                   color: theme.palette.text.secondary,
-                  '&:hover': { color: theme.palette.primary.main }
+                  '&:hover': {
+                    color: theme.palette.text.primary,
+                    backgroundColor: alpha(theme.palette.text.primary, 0.08)
+                  }
                 }}
               >
-                <ContentCopyRoundedIcon sx={{ fontSize: 13 }} />
-              </IconButton>
-            </Tooltip>
-
-            {/* Delete Route Button */}
-            <Tooltip title={t.nav.deleteRoute} arrow>
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteRoute(route.uuid);
-                }}
-                sx={{
-                  p: 0.4,
-                  color: theme.palette.text.secondary,
-                  '&:hover': { color: theme.palette.error.main }
-                }}
-              >
-                <DeleteOutlineRoundedIcon sx={{ fontSize: 14 }} />
+                <MoreVertRoundedIcon sx={{ fontSize: 16 }} />
               </IconButton>
             </Tooltip>
           </Box>
@@ -446,7 +460,7 @@ export const EnvironmentNav: React.FC = () => {
         sx={{
           mb: 0.3,
           cursor: 'grab',
-          opacity: isDragging ? 0.35 : 1,
+          opacity: isDragging ? 0.35 : isDisabled ? 0.55 : 1,
           borderTop: isDropBefore ? `2px solid ${theme.palette.primary.main}` : 'none',
           borderBottom: isDropAfter ? `2px solid ${theme.palette.primary.main}` : 'none',
           '&:hover .route-actions': { opacity: 0.9 }
@@ -463,13 +477,13 @@ export const EnvironmentNav: React.FC = () => {
             py: route.documentation ? 0.45 : 0.4,
             px: 1,
             pl: indent ? 2.5 : 1,
-            pr: 4.8, // prevent secondaryAction from overlapping text
+            pr: 3.8, // prevent secondaryAction from overlapping text
             minHeight: 32,
             alignItems: 'flex-start'
           }}
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden', flex: 1 }}>
-            {/* Line 1: Method Micro-Badge + Path */}
+            {/* Line 1: Method Micro-Badge + Path + Disabled Badge */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, minWidth: 0 }}>
               <Box
                 sx={{
@@ -478,8 +492,8 @@ export const EnvironmentNav: React.FC = () => {
                   minWidth: 34,
                   textAlign: 'center',
                   borderRadius: 0.6,
-                  backgroundColor: methodCfg.bg,
-                  color: methodCfg.text,
+                  backgroundColor: isDisabled ? alpha(theme.palette.text.disabled, 0.2) : methodCfg.bg,
+                  color: isDisabled ? theme.palette.text.secondary : methodCfg.text,
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   fontFamily: "'Fira Code', monospace",
@@ -500,7 +514,10 @@ export const EnvironmentNav: React.FC = () => {
                     fontFamily: "'Fira Code', monospace",
                     fontSize: '0.78rem',
                     fontWeight: isSelected ? 700 : 600,
-                    color: isSelected
+                    textDecoration: isDisabled ? 'line-through' : 'none',
+                    color: isDisabled
+                      ? theme.palette.text.disabled
+                      : isSelected
                       ? theme.palette.text.primary
                       : theme.palette.mode === 'light'
                       ? '#1e293b'
@@ -513,6 +530,24 @@ export const EnvironmentNav: React.FC = () => {
                   /{cleanEndpoint}
                 </Typography>
               </Tooltip>
+
+              {isDisabled && (
+                <Box
+                  sx={{
+                    px: 0.5,
+                    py: 0.05,
+                    borderRadius: 0.5,
+                    backgroundColor: alpha(theme.palette.warning.main, 0.12),
+                    color: theme.palette.warning.main,
+                    fontSize: '0.6rem',
+                    fontWeight: 700,
+                    lineHeight: 1.2,
+                    flexShrink: 0
+                  }}
+                >
+                  {t.nav.routeDisabledBadge || '已禁用'}
+                </Box>
+              )}
             </Box>
 
             {/* Line 2 (Optional): Documentation in subtle small font */}
@@ -1207,6 +1242,240 @@ export const EnvironmentNav: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Route Context/Action Menu (1:1 with original Mockoon) */}
+      <Menu
+        anchorEl={routeMenuState?.el}
+        open={Boolean(routeMenuState)}
+        onClose={() => setRouteMenuState(null)}
+        PaperProps={{
+          sx: {
+            minWidth: 260,
+            maxWidth: 360,
+            boxShadow: '0 10px 28px rgba(0,0,0,0.22)',
+            borderRadius: 1.5,
+            border: `1px solid ${theme.palette.divider}`,
+            py: 0.5
+          }
+        }}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+      >
+        {/* 1. Duplicate */}
+        <MenuItem
+          onClick={() => {
+            if (routeMenuState) {
+              duplicateRoute(routeMenuState.route.uuid);
+              setRouteMenuState(null);
+            }
+          }}
+          sx={{ py: 0.7, px: 1.8, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 1.4 }}
+        >
+          <ContentCopyRoundedIcon sx={{ fontSize: 16, color: theme.palette.text.secondary }} />
+          <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+            {t.nav.duplicateRoute || 'Duplicate'}
+          </Typography>
+        </MenuItem>
+
+        {/* 2. Duplicate to environment */}
+        <MenuItem
+          onClick={() => {
+            if (routeMenuState) {
+              setTargetEnvPickerRoute(routeMenuState.route);
+              setRouteMenuState(null);
+            }
+          }}
+          sx={{ py: 0.7, px: 1.8, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 1.4 }}
+        >
+          <DriveFileMoveOutlinedIcon sx={{ fontSize: 16, color: theme.palette.text.secondary }} />
+          <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+            {t.nav.duplicateToEnv || 'Duplicate to environment'}
+          </Typography>
+        </MenuItem>
+
+        {/* 3. Copy configuration to clipboard (Mockoon's JSON format) */}
+        <MenuItem
+          onClick={() => {
+            if (routeMenuState) {
+              const json = JSON.stringify(routeMenuState.route, null, 2);
+              navigator.clipboard.writeText(json);
+              setFeedbackToast(
+                locale === 'zh-CN'
+                  ? '已复制接口配置 (Mockoon JSON) 到剪贴板！'
+                  : "Configuration copied to clipboard (Mockoon's JSON format)"
+              );
+              setRouteMenuState(null);
+            }
+          }}
+          sx={{ py: 0.7, px: 1.8, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 1.4 }}
+        >
+          <AssignmentOutlinedIcon sx={{ fontSize: 16, color: theme.palette.text.secondary }} />
+          <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+            {t.nav.copyConfigJson || "Copy configuration to clipboard (Mockoon's JSON format)"}
+          </Typography>
+        </MenuItem>
+
+        {/* 4. Copy full path to clipboard */}
+        <MenuItem
+          onClick={() => {
+            if (routeMenuState && activeEnvironment) {
+              const protocol = activeEnvironment.tlsOptions?.enabled ? 'https' : 'http';
+              const hostname = activeEnvironment.hostname || 'localhost';
+              const port = activeEnvironment.port || 3000;
+              const prefix = (activeEnvironment.endpointPrefix || '').replace(/^\/|\/$/g, '');
+              const ep = (routeMenuState.route.endpoint || '').replace(/^\//, '');
+              const fullUrl = `${protocol}://${hostname}:${port}/${prefix ? prefix + '/' : ''}${ep}`;
+              navigator.clipboard.writeText(fullUrl);
+              setFeedbackToast(
+                locale === 'zh-CN' ? `已复制接口完整路径: ${fullUrl}` : `Full URL copied: ${fullUrl}`
+              );
+              setRouteMenuState(null);
+            }
+          }}
+          sx={{ py: 0.7, px: 1.8, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 1.4 }}
+        >
+          <LinkRoundedIcon sx={{ fontSize: 16, color: theme.palette.text.secondary }} />
+          <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+            {t.nav.copyFullPath || 'Copy full path to clipboard'}
+          </Typography>
+        </MenuItem>
+
+        {/* 5. Toggle */}
+        <MenuItem
+          onClick={() => {
+            if (routeMenuState) {
+              const willBeDisabled = !isRouteDisabled(routeMenuState.route.uuid);
+              toggleRoute(routeMenuState.route.uuid);
+              setFeedbackToast(
+                locale === 'zh-CN'
+                  ? willBeDisabled
+                    ? '接口已禁用 (Toggle Off)'
+                    : '接口已启用 (Toggle On)'
+                  : willBeDisabled
+                  ? 'Route disabled'
+                  : 'Route enabled'
+              );
+              setRouteMenuState(null);
+            }
+          }}
+          sx={{ py: 0.7, px: 1.8, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 1.4 }}
+        >
+          <PowerSettingsNewRoundedIcon
+            sx={{
+              fontSize: 16,
+              color:
+                routeMenuState && isRouteDisabled(routeMenuState.route.uuid)
+                  ? theme.palette.warning.main
+                  : theme.palette.text.secondary
+            }}
+          />
+          <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+            {t.nav.toggleRoute || 'Toggle'}
+          </Typography>
+        </MenuItem>
+
+        {/* 6. Delete */}
+        <MenuItem
+          onClick={() => {
+            if (routeMenuState) {
+              deleteRoute(routeMenuState.route.uuid);
+              setRouteMenuState(null);
+            }
+          }}
+          sx={{
+            py: 0.7,
+            px: 1.8,
+            fontSize: '0.8rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.4,
+            color: theme.palette.error.main,
+            '&:hover': {
+              backgroundColor: alpha(theme.palette.error.main, 0.08)
+            }
+          }}
+        >
+          <DeleteOutlineRoundedIcon sx={{ fontSize: 16 }} />
+          <Typography variant="body2" sx={{ fontSize: '0.8rem', color: 'inherit' }}>
+            {t.nav.deleteRoute || 'Delete'}
+          </Typography>
+        </MenuItem>
+      </Menu>
+
+      {/* Duplicate to environment Picker Dialog */}
+      <Dialog
+        open={Boolean(targetEnvPickerRoute)}
+        onClose={() => setTargetEnvPickerRoute(null)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 2 } }}
+      >
+        <DialogTitle sx={{ py: 1.5, fontSize: '0.9rem', fontWeight: 700 }}>
+          {t.nav.duplicateTargetEnvTitle || '选择复制目标环境 (Duplicate to environment)'}
+        </DialogTitle>
+        <DialogContent sx={{ py: 1 }}>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, mb: 1, display: 'block' }}>
+            将接口 [{targetEnvPickerRoute?.method?.toUpperCase() || 'GET'} /{targetEnvPickerRoute?.endpoint}] 复制到以下环境：
+          </Typography>
+          {environments.filter((e) => e.uuid !== activeEnvironment?.uuid).length === 0 ? (
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, py: 2, textAlign: 'center' }}>
+              {t.nav.noOtherEnvironments || '暂无其他环境，请先在左侧新建一个环境后再试。'}
+            </Typography>
+          ) : (
+            <List sx={{ pt: 0 }}>
+              {environments
+                .filter((e) => e.uuid !== activeEnvironment?.uuid)
+                .map((env) => (
+                  <ListItem key={env.uuid} disablePadding sx={{ mb: 0.5 }}>
+                    <ListItemButton
+                      onClick={async () => {
+                        if (targetEnvPickerRoute) {
+                          await duplicateRouteToEnvironment(targetEnvPickerRoute.uuid, env.uuid);
+                          setFeedbackToast(
+                            locale === 'zh-CN'
+                              ? `已成功将接口复制到 [${env.name}]！`
+                              : `Route duplicated to [${env.name}]!`
+                          );
+                          setTargetEnvPickerRoute(null);
+                        }
+                      }}
+                      sx={{ borderRadius: 1.5, py: 0.8 }}
+                    >
+                      <ListItemText
+                        primary={env.name}
+                        secondary={`端口 (Port): ${env.port}`}
+                        primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: 600 }}
+                        secondaryTypographyProps={{ fontSize: '0.72rem' }}
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 1.5 }}>
+          <Button size="small" onClick={() => setTargetEnvPickerRoute(null)}>
+            {t.common.cancel || '取消'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Feedback Toast */}
+      <Snackbar
+        open={Boolean(feedbackToast)}
+        autoHideDuration={2400}
+        onClose={() => setFeedbackToast(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setFeedbackToast(null)}
+          severity="success"
+          variant="filled"
+          sx={{ width: '100%', fontSize: '0.8rem', py: 0.5, boxShadow: 3 }}
+        >
+          {feedbackToast}
+        </Alert>
+      </Snackbar>
 
       {/* Resizable Splitter Handle */}
       <Box

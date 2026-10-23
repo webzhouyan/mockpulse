@@ -161,6 +161,12 @@ class ApiService {
     }
   }
 
+  public updateDisabledRoutes(disabledRoutes: Record<string, string[]>): void {
+    if (this.hasElectron && window.api?.send) {
+      window.api.send('APP_UPDATE_DISABLED_ROUTES', disabledRoutes);
+    }
+  }
+
   // --- Dialogs ---
   public async showOpenDialog(options: any): Promise<{ canceled: boolean; filePaths: string[] }> {
     if (this.hasElectron) {
