@@ -205,6 +205,12 @@ Output artifacts are saved in the `packages/app/packages/` folder.
 
 ---
 
+## 📝 Changelog
+
+Detailed release notes, feature changes, and bug fixes for each version are documented in [CHANGELOG.md](./CHANGELOG.md).
+
+---
+
 ## 🤝 Contributing
 
 Issues and pull requests are welcomed! Feel free to submit feedback or feature suggestions.

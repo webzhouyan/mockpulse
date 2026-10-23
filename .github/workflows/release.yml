@@ -111,6 +111,37 @@ jobs:
           sha256sum * > SHA256SUMS.txt 2>/dev/null || true
           ls -la
 
+      - name: Prepare Release Notes
+        run: |
+          CLEAN_VER="${{ steps.release_tag.outputs.clean_version }}"
+
+          echo "### 📦 安装包下载 (Downloads)" > release_body.md
+          echo "" >> release_body.md
+          echo "| 操作系统 | 安装包格式 | 说明 |" >> release_body.md
+          echo "| :--- | :--- | :--- |" >> release_body.md
+          echo "| 🪟 **Windows (x64)** | \`MockPulse-${CLEAN_VER}.exe\` | 标准安装程序（支持自定义安装路径） |" >> release_body.md
+          echo "| 🪟 **Windows (x64)** | \`MockPulse-portable-${CLEAN_VER}.exe\` | 绿色便携版免安装，解压直接运行 |" >> release_body.md
+          echo "| 🍎 **macOS (Apple Silicon)** | \`MockPulse-${CLEAN_VER}.arm64.dmg\` | 适用于 M1/M2/M3/M4 系列 Mac |" >> release_body.md
+          echo "| 🍎 **macOS (Intel)** | \`MockPulse-${CLEAN_VER}.x64.dmg\` | 适用于 Intel 架构 Mac |" >> release_body.md
+          echo "| 🐧 **Linux (x64)** | \`MockPulse-${CLEAN_VER}.x86_64.AppImage\` | 通用独立可执行文件，双击即运行 |" >> release_body.md
+          echo "| 🐧 **Linux (Debian/Ubuntu)** | \`MockPulse-${CLEAN_VER}.amd64.deb\` | \`sudo dpkg -i MockPulse-${CLEAN_VER}.amd64.deb\` |" >> release_body.md
+          echo "| 🐧 **Linux (Fedora/RHEL)** | \`MockPulse-${CLEAN_VER}.x86_64.rpm\` | \`sudo rpm -ivh MockPulse-${CLEAN_VER}.x86_64.rpm\` |" >> release_body.md
+          echo "" >> release_body.md
+          echo "---" >> release_body.md
+          echo "" >> release_body.md
+          echo "### 📝 更新内容 (Changelog)" >> release_body.md
+          echo "" >> release_body.md
+
+          # 从 CHANGELOG.md 中提取当前发布版本的变更记录
+          awk -v ver="${CLEAN_VER}" '
+            BEGIN { found=0 }
+            $0 ~ "^## \\[" ver "\\]" { found=1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md >> release_body.md
+
+          cat release_body.md
+
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         env:
@@ -120,34 +151,6 @@ jobs:
           name: MockPulse ${{ steps.release_tag.outputs.tag }}
           draft: false
           prerelease: false
+          body_path: release_body.md
           files: |
             ./dist-release/*
-          body: |
-            ## 🚀 MockPulse ${{ steps.release_tag.outputs.tag }} 正式发布！
-
-            MockPulse 是基于开源项目 [Mockoon](https://github.com/mockoon/mockoon) 进行深度现代化二次开发的离线优先桌面端 API 模拟开发工具。
-            
-            ### 📦 安装包下载 (Downloads)
-
-            | 操作系统 | 安装包格式 | 说明 |
-            | :--- | :--- | :--- |
-            | 🪟 **Windows (x64)** | `MockPulse-${{ steps.release_tag.outputs.clean_version }}.exe` | 标准安装程序（支持自定义安装路径） |
-            | 🪟 **Windows (x64)** | `MockPulse-portable-${{ steps.release_tag.outputs.clean_version }}.exe` | 绿色便携版免安装，解压直接运行 |
-            | 🍎 **macOS (Apple Silicon)** | `MockPulse-${{ steps.release_tag.outputs.clean_version }}.arm64.dmg` | 适用于 M1/M2/M3/M4 系列 Mac |
-            | 🍎 **macOS (Intel)** | `MockPulse-${{ steps.release_tag.outputs.clean_version }}.x64.dmg` | 适用于 Intel 架构 Mac |
-            | 🐧 **Linux (x64)** | `MockPulse-${{ steps.release_tag.outputs.clean_version }}.x86_64.AppImage` | 通用独立可执行文件，双击即运行 |
-            | 🐧 **Linux (Debian/Ubuntu)** | `MockPulse-${{ steps.release_tag.outputs.clean_version }}.amd64.deb` | `sudo dpkg -i MockPulse-${{ steps.release_tag.outputs.clean_version }}.amd64.deb` |
-            | 🐧 **Linux (Fedora/RHEL)** | `MockPulse-${{ steps.release_tag.outputs.clean_version }}.x86_64.rpm` | `sudo rpm -ivh MockPulse-${{ steps.release_tag.outputs.clean_version }}.x86_64.rpm` |
-
-            ---
-
-            ### ✨ 核心功能亮点
-
-            - ⚡ **离线优先，数据本地化**：无需联网、无需注册账号，所有环境与 Mock 数据完全存储于本地 JSON 文件中。
-            - 🎨 **极速现代交互**：React 19 + Material-UI (MUI v9) 现代界面，支持流畅的明暗主题与自适应紧凑排版。
-            - 📑 **OpenAPI / Swagger 深度互通**：100% 支持 OpenAPI v2/v3 (JSON/YAML) 无缝导入与导出。
-            - 🗄️ **REST / CRUD / WebSocket 全覆盖**：支持丰富状态码规则与回调 Webhook、数据桶动态 CRUD 自动路由、以及 WebSocket 长连接流式推送。
-            - 🔄 **完美向下兼容**：底层完全兼容 Mockoon 官方数据结构，无缝打开旧项目。
-
-            ---
-            *鸣谢：本项目的核心引擎与数据结构源自 [Mockoon](https://github.com/mockoon/mockoon)（遵循 MIT 协议）。*

@@ -218,6 +218,12 @@ npm run package:desktop:win
 
 ---
 
+## 📝 更新日志
+
+各版本的更新明细、功能变更与缺陷修复记录请参阅 [CHANGELOG.md](./CHANGELOG.md)。
+
+---
+
 ## 🤝 参与贡献
 
 欢迎提交 Issue 与 Pull Request！如果您在开发过程中发现了问题或有新的特性建议，请随时交流。
