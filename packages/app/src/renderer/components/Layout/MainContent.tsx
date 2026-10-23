@@ -13,7 +13,7 @@ export const MainContent: React.FC = () => {
   const { activeTabKey } = useApp();
 
   return (
-    <Box sx={{ flex: 1, height: '100%', overflow: 'hidden', position: 'relative' }}>
+    <Box sx={{ flex: 1, minHeight: 0, width: '100%', overflow: 'hidden', position: 'relative' }}>
       {activeTabKey === 'routes' && <RoutesView />}
       {activeTabKey === 'dataBuckets' && <DataBucketsView />}
       {activeTabKey === 'headers' && <HeadersView />}

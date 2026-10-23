@@ -443,6 +443,8 @@ export const LogsView: React.FC = () => {
           sx={{
             flex: 1,
             height: '100%',
+            minHeight: 0,
+            minWidth: 0,
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -453,6 +455,9 @@ export const LogsView: React.FC = () => {
           {/* Top Tabs: Request ↙ & Response ↗ */}
           <Box
             sx={{
+              height: 38,
+              minHeight: 38,
+              flexShrink: 0,
               borderBottom: `1px solid ${theme.palette.divider}`,
               px: 2,
               backgroundColor:
@@ -498,7 +503,9 @@ export const LogsView: React.FC = () => {
             className="selectable"
             sx={{
               flex: 1,
+              minHeight: 0,
               p: 2,
+              pb: 4,
               overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
@@ -511,7 +518,7 @@ export const LogsView: React.FC = () => {
               // ==================== REQUEST TAB ====================
               <>
                 {/* 1. General Info Accordion */}
-                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'visible' }}>
+                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'visible', flexShrink: 0 }}>
                   <Box
                     onClick={() => setOpenReqGeneral(!openReqGeneral)}
                     sx={{
@@ -627,7 +634,7 @@ export const LogsView: React.FC = () => {
                 </Paper>
 
                 {/* 2. Headers (N) Accordion */}
-                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
+                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'visible', flexShrink: 0 }}>
                   <Box
                     sx={{
                       px: 1.5,
@@ -635,6 +642,8 @@ export const LogsView: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
+                      borderTopLeftRadius: 6,
+                      borderTopRightRadius: 6,
                       backgroundColor: alpha(theme.palette.text.primary, 0.02)
                     }}
                   >
@@ -663,9 +672,9 @@ export const LogsView: React.FC = () => {
                     </Tooltip>
                   </Box>
 
-                  <Collapse in={openReqHeaders}>
+                  <Collapse in={openReqHeaders} timeout="auto" unmountOnExit={false}>
                     <Divider />
-                    <Box sx={{ p: 1.5, maxHeight: 240, overflowY: 'auto' }}>
+                    <Box sx={{ p: 1.5 }}>
                       {activeTx.request?.headers && activeTx.request.headers.length > 0 ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
                           {activeTx.request.headers.map((h, i) => (
@@ -690,7 +699,7 @@ export const LogsView: React.FC = () => {
 
                 {/* 3. Route params (If any) */}
                 {activeTx.request?.params && activeTx.request.params.length > 0 && (
-                  <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
+                  <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'visible', flexShrink: 0 }}>
                     <Box
                       onClick={() => setOpenReqParams(!openReqParams)}
                       sx={{
@@ -699,6 +708,8 @@ export const LogsView: React.FC = () => {
                         display: 'flex',
                         alignItems: 'center',
                         cursor: 'pointer',
+                        borderTopLeftRadius: 6,
+                        borderTopRightRadius: 6,
                         backgroundColor: alpha(theme.palette.text.primary, 0.02)
                       }}
                     >
@@ -712,7 +723,7 @@ export const LogsView: React.FC = () => {
                       </Typography>
                     </Box>
 
-                    <Collapse in={openReqParams}>
+                    <Collapse in={openReqParams} timeout="auto" unmountOnExit={false}>
                       <Divider />
                       <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 0.6 }}>
                         {activeTx.request.params.map((p, i) => (
@@ -732,7 +743,7 @@ export const LogsView: React.FC = () => {
 
                 {/* 4. Query params (If any) */}
                 {activeTx.request?.queryParams && Object.keys(activeTx.request.queryParams).length > 0 && (
-                  <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
+                  <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'visible', flexShrink: 0 }}>
                     <Box
                       onClick={() => setOpenReqQuery(!openReqQuery)}
                       sx={{
@@ -741,6 +752,8 @@ export const LogsView: React.FC = () => {
                         display: 'flex',
                         alignItems: 'center',
                         cursor: 'pointer',
+                        borderTopLeftRadius: 6,
+                        borderTopRightRadius: 6,
                         backgroundColor: alpha(theme.palette.text.primary, 0.02)
                       }}
                     >
@@ -754,7 +767,7 @@ export const LogsView: React.FC = () => {
                       </Typography>
                     </Box>
 
-                    <Collapse in={openReqQuery}>
+                    <Collapse in={openReqQuery} timeout="auto" unmountOnExit={false}>
                       <Divider />
                       <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 0.6 }}>
                         {Object.entries(activeTx.request.queryParams).map(([key, value], i) => (
@@ -773,7 +786,7 @@ export const LogsView: React.FC = () => {
                 )}
 
                 {/* 5. Request Body Accordion */}
-                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
+                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'visible', flexShrink: 0 }}>
                   <Box
                     sx={{
                       px: 1.5,
@@ -781,6 +794,8 @@ export const LogsView: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
+                      borderTopLeftRadius: 6,
+                      borderTopRightRadius: 6,
                       backgroundColor: alpha(theme.palette.text.primary, 0.02)
                     }}
                   >
@@ -799,21 +814,41 @@ export const LogsView: React.FC = () => {
                     </Box>
 
                     {activeTx.request?.body && (
-                      <Tooltip title="复制 Body" arrow>
-                        <IconButton
-                          size="small"
-                          onClick={() => copyToClipboard(formatBodyContent(activeTx.request.body))}
-                          sx={{ p: 0.3 }}
-                        >
-                          <ContentCopyRoundedIcon sx={{ fontSize: 14 }} />
-                        </IconButton>
-                      </Tooltip>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
+                        <Tooltip title="格式化 JSON" arrow>
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              try {
+                                const parsed = typeof activeTx.request.body === 'string'
+                                  ? JSON.parse(activeTx.request.body)
+                                  : activeTx.request.body;
+                                activeTx.request.body = JSON.stringify(parsed, null, 2);
+                                setCopiedSnackbar(true);
+                              } catch (e) {}
+                            }}
+                            sx={{ p: 0.3 }}
+                          >
+                            <AutoFixHighRoundedIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        </Tooltip>
+
+                        <Tooltip title="复制 Body" arrow>
+                          <IconButton
+                            size="small"
+                            onClick={() => copyToClipboard(formatBodyContent(activeTx.request.body))}
+                            sx={{ p: 0.3 }}
+                          >
+                            <ContentCopyRoundedIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
                     )}
                   </Box>
 
-                  <Collapse in={openReqBody}>
+                  <Collapse in={openReqBody} timeout="auto" unmountOnExit={false}>
                     <Divider />
-                    <Box sx={{ p: 1.5, maxHeight: 600, overflowY: 'auto', overflowX: 'auto' }}>
+                    <Box sx={{ p: 1.5, pb: 2, overflowX: 'auto' }}>
                       {activeTx.request?.body ? (
                         <Box
                           component="pre"
@@ -836,6 +871,9 @@ export const LogsView: React.FC = () => {
                     </Box>
                   </Collapse>
                 </Paper>
+
+                {/* Bottom trailing spacer */}
+                <Box sx={{ height: 48, flexShrink: 0 }} />
               </>
             ) : (
               // ==================== RESPONSE TAB ====================
@@ -940,7 +978,7 @@ export const LogsView: React.FC = () => {
                 </Paper>
 
                 {/* 2. Response Headers (N) Accordion */}
-                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
+                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'visible', flexShrink: 0 }}>
                   <Box
                     sx={{
                       px: 1.5,
@@ -948,6 +986,8 @@ export const LogsView: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
+                      borderTopLeftRadius: 6,
+                      borderTopRightRadius: 6,
                       backgroundColor: alpha(theme.palette.text.primary, 0.02)
                     }}
                   >
@@ -976,9 +1016,9 @@ export const LogsView: React.FC = () => {
                     </Tooltip>
                   </Box>
 
-                  <Collapse in={openResHeaders}>
+                  <Collapse in={openResHeaders} timeout="auto" unmountOnExit={false}>
                     <Divider />
-                    <Box sx={{ p: 1.5, maxHeight: 240, overflowY: 'auto' }}>
+                    <Box sx={{ p: 1.5 }}>
                       {activeTx.response?.headers && activeTx.response.headers.length > 0 ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
                           {activeTx.response.headers.map((h, i) => (
@@ -1002,7 +1042,7 @@ export const LogsView: React.FC = () => {
                 </Paper>
 
                 {/* 3. Response Body Accordion */}
-                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
+                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'visible', flexShrink: 0 }}>
                   <Box
                     sx={{
                       px: 1.5,
@@ -1010,6 +1050,8 @@ export const LogsView: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
+                      borderTopLeftRadius: 6,
+                      borderTopRightRadius: 6,
                       backgroundColor: alpha(theme.palette.text.primary, 0.02)
                     }}
                   >
@@ -1058,9 +1100,9 @@ export const LogsView: React.FC = () => {
                     )}
                   </Box>
 
-                  <Collapse in={openResBody}>
+                  <Collapse in={openResBody} timeout="auto" unmountOnExit={false}>
                     <Divider />
-                    <Box sx={{ p: 1.5, maxHeight: 600, overflowY: 'auto', overflowX: 'auto' }}>
+                    <Box sx={{ p: 1.5, pb: 2, overflowX: 'auto' }}>
                       {activeTx.response?.body ? (
                         <Box
                           component="pre"
@@ -1083,6 +1125,9 @@ export const LogsView: React.FC = () => {
                     </Box>
                   </Collapse>
                 </Paper>
+
+                {/* Bottom trailing spacer */}
+                <Box sx={{ height: 48, flexShrink: 0 }} />
               </>
             )}
           </Box>
