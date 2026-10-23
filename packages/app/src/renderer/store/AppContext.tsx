@@ -127,7 +127,7 @@ const DEFAULT_SETTINGS: Settings = {
   displayLogsIsoTimestamp: true,
   deployPreferredRegion: 'us' as any,
   commandPaletteRecentCommands: [],
-  themeMode: 'dark',
+  themeMode: 'light',
   themePreset: 'modern-indigo',
   locale: 'zh-CN',
   layoutDensity: 'compact',
@@ -291,7 +291,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [navTabsOrder, setNavTabsOrderState] =
     useState<string[]>(DEFAULT_NAV_TABS);
 
-  const [themeMode, setThemeModeState] = useState<'light' | 'dark'>('dark');
+  const [themeMode, setThemeModeState] = useState<'light' | 'dark'>('light');
   const [themePreset, setThemePresetState] =
     useState<ThemePresetKey>('modern-indigo');
   const [locale, setLocaleState] = useState<SupportedLocale>('zh-CN');

@@ -70,6 +70,19 @@ const METHOD_COLORS: Record<string, { bg: string; text: string }> = {
   ws: { bg: '#06b6d4', text: '#ffffff' }
 };
 
+const METHOD_TEXT_COLORS: Record<string, string> = {
+  get: '#3b82f6',
+  post: '#10b981',
+  put: '#f59e0b',
+  patch: '#8b5cf6',
+  delete: '#ef4444',
+  options: '#64748b',
+  head: '#06b6d4',
+  all: '#14b8a6',
+  crud: '#8b5cf6',
+  ws: '#06b6d4'
+};
+
 interface DropIndicator {
   targetId: string;
   position: 'BEFORE' | 'AFTER' | 'INSIDE';
@@ -406,8 +419,11 @@ export const EnvironmentNav: React.FC = () => {
 
     const methodKey = (route.type === 'crud' ? 'crud' : route.type === 'ws' ? 'ws' : route.method || 'get').toLowerCase();
     const methodCfg = METHOD_COLORS[methodKey] || METHOD_COLORS.get;
-    const badgeLabel = route.type === 'crud' ? 'CRUD' : route.type === 'ws' ? 'WS' : route.method || 'GET';
+    const methodTextColor = METHOD_TEXT_COLORS[methodKey] || '#10b981';
+    const badgeLabel = route.type === 'crud' ? 'CRUD' : route.type === 'ws' ? 'WS' : (route.method || 'GET').toUpperCase();
     const cleanEndpoint = (route.endpoint || '').replace(/^\//, '');
+    const respCount = (route.responses || []).length;
+    const responseText = `${respCount} ${respCount > 1 ? 'responses' : 'response'}`;
 
     return (
       <ListItem
@@ -473,46 +489,26 @@ export const EnvironmentNav: React.FC = () => {
             setActiveTabKey('routes');
           }}
           sx={{
-            borderRadius: 1.5,
-            py: route.documentation ? 0.45 : 0.4,
+            borderRadius: 1,
+            py: 0.5,
             px: 1,
             pl: indent ? 2.5 : 1,
             pr: 3.8, // prevent secondaryAction from overlapping text
-            minHeight: 32,
+            minHeight: 38,
+            borderLeft: isSelected ? `3px solid ${theme.palette.primary.main}` : '3px solid transparent',
             alignItems: 'flex-start'
           }}
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden', flex: 1 }}>
-            {/* Line 1: Method Micro-Badge + Path + Disabled Badge */}
+            {/* Line 1: Route Path + Disabled Badge */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, minWidth: 0 }}>
-              <Box
-                sx={{
-                  px: 0.5,
-                  py: 0.1,
-                  minWidth: 34,
-                  textAlign: 'center',
-                  borderRadius: 0.6,
-                  backgroundColor: isDisabled ? alpha(theme.palette.text.disabled, 0.2) : methodCfg.bg,
-                  color: isDisabled ? theme.palette.text.secondary : methodCfg.text,
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  fontFamily: "'Fira Code', monospace",
-                  fontSize: '0.62rem',
-                  lineHeight: 1.25,
-                  flexShrink: 0,
-                  letterSpacing: '0.01em'
-                }}
-              >
-                {badgeLabel}
-              </Box>
-
               <Tooltip title={`/${cleanEndpoint}`} arrow enterDelay={400} placement="top">
                 <Typography
                   variant="body2"
                   noWrap
                   sx={{
                     fontFamily: "'Fira Code', monospace",
-                    fontSize: '0.78rem',
+                    fontSize: '0.8rem',
                     fontWeight: isSelected ? 700 : 600,
                     textDecoration: isDisabled ? 'line-through' : 'none',
                     color: isDisabled
@@ -550,26 +546,38 @@ export const EnvironmentNav: React.FC = () => {
               )}
             </Box>
 
-            {/* Line 2 (Optional): Documentation in subtle small font */}
-            {route.documentation && (
-              <Tooltip title={route.documentation} arrow enterDelay={400} placement="top">
-                <Typography
-                  variant="caption"
-                  noWrap
-                  sx={{
-                    mt: 0.25,
-                    pl: 0.2,
-                    fontSize: '0.68rem',
-                    color: theme.palette.text.secondary,
-                    lineHeight: 1.2,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}
-                >
-                  {route.documentation}
-                </Typography>
-              </Tooltip>
-            )}
+            {/* Line 2: Method + Response Count + Optional Documentation */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, minWidth: 0, mt: 0.25 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: isDisabled ? theme.palette.text.disabled : methodTextColor,
+                  fontWeight: 700,
+                  fontFamily: "'Fira Code', monospace",
+                  fontSize: '0.72rem',
+                  lineHeight: 1.2,
+                  letterSpacing: '0.02em',
+                  flexShrink: 0
+                }}
+              >
+                {badgeLabel}
+              </Typography>
+
+              <Typography
+                variant="caption"
+                noWrap
+                sx={{
+                  fontSize: '0.72rem',
+                  color: theme.palette.text.secondary,
+                  lineHeight: 1.2,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}
+              >
+                {responseText}
+                {route.documentation ? ` · ${route.documentation}` : ''}
+              </Typography>
+            </Box>
           </Box>
         </ListItemButton>
       </ListItem>

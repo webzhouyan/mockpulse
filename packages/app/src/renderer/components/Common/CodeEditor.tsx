@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -13,14 +13,15 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
   Button
 } from '@mui/material';
 import AutoFixHighRoundedIcon from '@mui/icons-material/AutoFixHighRounded';
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import FullscreenRoundedIcon from '@mui/icons-material/FullscreenRounded';
 import FullscreenExitRoundedIcon from '@mui/icons-material/FullscreenExitRounded';
-import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
+import CodeMirror from '@uiw/react-codemirror';
+import { json } from '@codemirror/lang-json';
+import { githubLight, githubDark } from '@uiw/codemirror-theme-github';
 import { useI18n } from '../../i18n';
 
 interface CodeEditorProps {
@@ -41,28 +42,18 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 }) => {
   const theme = useTheme();
   const { t, locale } = useI18n();
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const gutterRef = useRef<HTMLDivElement>(null);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
-  // Calculate lines for gutter
+  // Line count
   const lineCount = useMemo(() => {
     if (!value) return 1;
     return value.split('\n').length;
   }, [value]);
 
-  const lines = useMemo(() => {
-    return Array.from({ length: Math.max(lineCount, 1) }, (_, i) => i + 1);
-  }, [lineCount]);
-
-  // Synchronize gutter scroll with textarea
-  const handleScroll = () => {
-    if (textareaRef.current && gutterRef.current) {
-      gutterRef.current.scrollTop = textareaRef.current.scrollTop;
-    }
-  };
+  // CodeMirror extensions with JSON syntax highlighting and folding
+  const extensions = useMemo(() => [json()], []);
 
   // Format JSON
   const handleFormat = () => {
@@ -80,6 +71,8 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     navigator.clipboard.writeText(value);
     setFeedback('已成功复制响应体到剪贴板！');
   };
+
+  const cmTheme = theme.palette.mode === 'dark' ? githubDark : githubLight;
 
   const editorContent = (
     <Box
@@ -181,60 +174,55 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         </Box>
       </Box>
 
-      {/* Editor Body: Gutter line numbers + Textarea */}
-      <Box sx={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
-        {/* Line Numbers Gutter */}
-        <Box
-          ref={gutterRef}
-          sx={{
-            width: 44,
-            minWidth: 44,
-            py: 1,
-            px: 0.5,
+      {/* Editor Body: Rich CodeMirror with JSON Syntax Highlighting, Folding & Line Numbers */}
+      <Box
+        sx={{
+          flex: 1,
+          height: 'calc(100% - 36px)',
+          overflow: 'hidden',
+          '& .cm-editor': {
+            height: '100%',
+            fontFamily: "'Fira Code', 'JetBrains Mono', Consolas, monospace",
+            fontSize: '0.82rem'
+          },
+          '& .cm-scroller': {
+            overflow: 'auto',
+            fontFamily: "'Fira Code', 'JetBrains Mono', Consolas, monospace"
+          },
+          '& .cm-gutters': {
             borderRight: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
             backgroundColor:
               theme.palette.mode === 'light'
                 ? alpha(theme.palette.grey[200], 0.3)
-                : alpha(theme.palette.background.default, 0.4),
-            color: theme.palette.text.disabled,
-            fontFamily: "'Fira Code', monospace",
-            fontSize: '0.8rem',
-            lineHeight: 1.5,
-            textAlign: 'right',
-            userSelect: 'none',
-            overflow: 'hidden'
-          }}
-        >
-          {lines.map((num) => (
-            <div key={num}>{num}</div>
-          ))}
-        </Box>
-
-        {/* Textarea Input */}
-        <textarea
-          ref={textareaRef}
+                : alpha(theme.palette.background.default, 0.4)
+          }
+        }}
+      >
+        <CodeMirror
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onScroll={handleScroll}
+          height="100%"
+          theme={cmTheme}
+          extensions={extensions}
+          onChange={(val) => onChange(val)}
           placeholder={placeholder}
-          spellCheck={false}
-          style={{
-            flex: 1,
-            width: '100%',
-            height: '100%',
-            resize: 'none',
-            outline: 'none',
-            border: 'none',
-            backgroundColor: 'transparent',
-            color: theme.palette.mode === 'light' ? '#1f2937' : '#e6edf3',
-            fontFamily: "'Fira Code', 'JetBrains Mono', Consolas, monospace",
-            fontSize: '0.82rem',
-            lineHeight: 1.5,
-            padding: '8px 12px',
-            whiteSpace: 'pre',
-            overflowWrap: 'normal',
-            overflowX: 'auto',
-            tabSize: 2
+          basicSetup={{
+            lineNumbers: true,
+            foldGutter: true,
+            dropCursor: false,
+            allowMultipleSelections: false,
+            indentOnInput: true,
+            bracketMatching: true,
+            closeBrackets: true,
+            autocompletion: false,
+            rectangularSelection: false,
+            crosshairCursor: false,
+            highlightActiveLine: true,
+            highlightSelectionMatches: false,
+            closeBracketsKeymap: true,
+            searchKeymap: true,
+            foldKeymap: true,
+            completionKeymap: false,
+            lintKeymap: false
           }}
         />
       </Box>
@@ -303,4 +291,3 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     </Box>
   );
 };
-

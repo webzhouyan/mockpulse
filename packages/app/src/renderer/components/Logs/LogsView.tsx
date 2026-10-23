@@ -296,7 +296,7 @@ export const LogsView: React.FC = () => {
         </Box>
 
         {/* Stream Items List (2-Line Mockoon Design) */}
-        <Box sx={{ flex: 1, overflowY: 'auto' }}>
+        <Box className="selectable" sx={{ flex: 1, overflowY: 'auto', userSelect: 'text' }}>
           <List sx={{ p: 0.6 }}>
             {filteredLogs.map((tx, idx) => {
               const isSelected = activeTx === tx;
@@ -418,7 +418,18 @@ export const LogsView: React.FC = () => {
 
       {/* Right Column: Request / Response Inspector (Original Mockoon Layout) */}
       {activeTx ? (
-        <Box sx={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <Box
+          className="selectable"
+          sx={{
+            flex: 1,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            userSelect: 'text',
+            '& *': { userSelect: 'text' }
+          }}
+        >
           {/* Top Tabs: Request ↙ & Response ↗ */}
           <Box
             sx={{
@@ -463,12 +474,24 @@ export const LogsView: React.FC = () => {
           </Box>
 
           {/* Inspector Content */}
-          <Box sx={{ flex: 1, p: 2, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Box
+            className="selectable"
+            sx={{
+              flex: 1,
+              p: 2,
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1.5,
+              userSelect: 'text',
+              '& *': { userSelect: 'text' }
+            }}
+          >
             {activeTab === 'request' ? (
               // ==================== REQUEST TAB ====================
               <>
                 {/* 1. General Info Accordion */}
-                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
+                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'visible' }}>
                   <Box
                     onClick={() => setOpenReqGeneral(!openReqGeneral)}
                     sx={{
@@ -477,6 +500,8 @@ export const LogsView: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       cursor: 'pointer',
+                      borderTopLeftRadius: 6,
+                      borderTopRightRadius: 6,
                       backgroundColor: alpha(theme.palette.text.primary, 0.02),
                       '&:hover': { backgroundColor: alpha(theme.palette.text.primary, 0.05) }
                     }}
@@ -491,9 +516,9 @@ export const LogsView: React.FC = () => {
                     </Typography>
                   </Box>
 
-                  <Collapse in={openReqGeneral}>
+                  <Collapse in={openReqGeneral} timeout="auto" unmountOnExit={false}>
                     <Divider />
-                    <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Box sx={{ p: 1.5, pb: 2, display: 'flex', flexDirection: 'column', gap: 1.2 }}>
                       {/* Request URL */}
                       <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.2 }}>
                         <Typography sx={{ width: 140, fontWeight: 700, fontSize: '0.76rem', color: theme.palette.text.secondary, flexShrink: 0 }}>
@@ -528,18 +553,19 @@ export const LogsView: React.FC = () => {
                       </Box>
 
                       {/* Caught by route */}
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                        <Typography sx={{ width: 140, fontWeight: 700, fontSize: '0.76rem', color: theme.palette.text.secondary, flexShrink: 0 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.2 }}>
+                        <Typography sx={{ width: 140, fontWeight: 700, fontSize: '0.76rem', color: theme.palette.text.secondary, flexShrink: 0, pt: 0.2 }}>
                           Caught by route:
                         </Typography>
                         {matchedRouteInfo ? (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
                             <Typography
                               sx={{
                                 fontFamily: "'Fira Code', monospace",
                                 fontSize: '0.76rem',
                                 fontWeight: 700,
-                                color: theme.palette.primary.main
+                                color: theme.palette.primary.main,
+                                wordBreak: 'break-all'
                               }}
                             >
                               /{matchedRouteInfo.route.endpoint} - {matchedRouteInfo.response?.label || `Response ${matchedRouteInfo.respIdx}`} ({matchedRouteInfo.response?.statusCode || 200})
@@ -559,7 +585,7 @@ export const LogsView: React.FC = () => {
                             </Tooltip>
                           </Box>
                         ) : (
-                          <Typography sx={{ fontSize: '0.76rem', color: theme.palette.text.disabled, fontStyle: 'italic' }}>
+                          <Typography sx={{ fontSize: '0.76rem', color: theme.palette.text.disabled, fontStyle: 'italic', pt: 0.2 }}>
                             None (404 Not Found)
                           </Typography>
                         )}
@@ -802,7 +828,7 @@ export const LogsView: React.FC = () => {
               // ==================== RESPONSE TAB ====================
               <>
                 {/* 1. Response General Info */}
-                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
+                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'visible' }}>
                   <Box
                     onClick={() => setOpenResGeneral(!openResGeneral)}
                     sx={{
@@ -811,6 +837,8 @@ export const LogsView: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       cursor: 'pointer',
+                      borderTopLeftRadius: 6,
+                      borderTopRightRadius: 6,
                       backgroundColor: alpha(theme.palette.text.primary, 0.02),
                       '&:hover': { backgroundColor: alpha(theme.palette.text.primary, 0.05) }
                     }}
@@ -825,9 +853,9 @@ export const LogsView: React.FC = () => {
                     </Typography>
                   </Box>
 
-                  <Collapse in={openResGeneral}>
+                  <Collapse in={openResGeneral} timeout="auto" unmountOnExit={false}>
                     <Divider />
-                    <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Box sx={{ p: 1.5, pb: 2, display: 'flex', flexDirection: 'column', gap: 1.2 }}>
                       {/* Status Code with Message */}
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
                         <Typography sx={{ width: 140, fontWeight: 700, fontSize: '0.76rem', color: theme.palette.text.secondary, flexShrink: 0 }}>
@@ -857,18 +885,19 @@ export const LogsView: React.FC = () => {
                       </Box>
 
                       {/* Served by route */}
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                        <Typography sx={{ width: 140, fontWeight: 700, fontSize: '0.76rem', color: theme.palette.text.secondary, flexShrink: 0 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.2 }}>
+                        <Typography sx={{ width: 140, fontWeight: 700, fontSize: '0.76rem', color: theme.palette.text.secondary, flexShrink: 0, pt: 0.2 }}>
                           Served by route:
                         </Typography>
                         {matchedRouteInfo ? (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
                             <Typography
                               sx={{
                                 fontFamily: "'Fira Code', monospace",
                                 fontSize: '0.76rem',
                                 fontWeight: 700,
-                                color: theme.palette.primary.main
+                                color: theme.palette.primary.main,
+                                wordBreak: 'break-all'
                               }}
                             >
                               /{matchedRouteInfo.route.endpoint} - {matchedRouteInfo.response?.label || `Response ${matchedRouteInfo.respIdx}`} ({matchedRouteInfo.response?.statusCode || 200})
@@ -888,7 +917,7 @@ export const LogsView: React.FC = () => {
                             </Tooltip>
                           </Box>
                         ) : (
-                          <Typography sx={{ fontSize: '0.76rem', color: theme.palette.text.disabled, fontStyle: 'italic' }}>
+                          <Typography sx={{ fontSize: '0.76rem', color: theme.palette.text.disabled, fontStyle: 'italic', pt: 0.2 }}>
                             None (404 Not Found)
                           </Typography>
                         )}

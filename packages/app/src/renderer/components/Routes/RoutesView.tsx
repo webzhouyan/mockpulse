@@ -1154,7 +1154,7 @@ export const RoutesView: React.FC = () => {
         </Box>
 
         {/* Branch Label */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flex: 1, minWidth: 100, maxWidth: 320 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, width: 220, minWidth: 160, flexShrink: 0 }}>
           <Typography
             variant="caption"
             sx={{
@@ -1179,7 +1179,7 @@ export const RoutesView: React.FC = () => {
                 borderRadius: 1
               }
             }}
-            sx={{ flex: 1, minWidth: 100 }}
+            sx={{ flex: 1, minWidth: 0 }}
           />
         </Box>
 
@@ -1188,6 +1188,7 @@ export const RoutesView: React.FC = () => {
           control={
             <Switch
               size="small"
+              sx={{ mr: 0.4 }}
               checked={!!activeResponse.default}
               onChange={(e) => {
                 const isChecked = e.target.checked;
@@ -1214,7 +1215,7 @@ export const RoutesView: React.FC = () => {
               {t.routes.defaultResponse || '默认响应'}
             </Typography>
           }
-          sx={{ mr: 0, flexShrink: 0, whiteSpace: 'nowrap' }}
+          sx={{ ml: 0.8, mr: 1, flexShrink: 0, whiteSpace: 'nowrap' }}
         />
 
         {/* Disable Templating Switch */}
@@ -1222,6 +1223,7 @@ export const RoutesView: React.FC = () => {
           control={
             <Switch
               size="small"
+              sx={{ mr: 0.4 }}
               checked={!!activeResponse.disableTemplating}
               onChange={(e) => updateActiveResponse((resp) => ({ ...resp, disableTemplating: e.target.checked }))}
             />
@@ -1231,7 +1233,7 @@ export const RoutesView: React.FC = () => {
               {locale === 'zh-CN' ? '禁用模板引擎' : 'Disable Templating'}
             </Typography>
           }
-          sx={{ mr: 0, flexShrink: 0, whiteSpace: 'nowrap' }}
+          sx={{ ml: 0.8, mr: 1, flexShrink: 0, whiteSpace: 'nowrap' }}
         />
 
         {/* Fallback to 404 (for FILE responses) */}
@@ -1240,6 +1242,7 @@ export const RoutesView: React.FC = () => {
             control={
               <Switch
                 size="small"
+                sx={{ mr: 0.4 }}
                 checked={!!activeResponse.fallbackTo404}
                 onChange={(e) => updateActiveResponse((resp) => ({ ...resp, fallbackTo404: e.target.checked }))}
               />
@@ -1249,7 +1252,7 @@ export const RoutesView: React.FC = () => {
                 {locale === 'zh-CN' ? '缺文件回退404' : '404 on missing file'}
               </Typography>
             }
-            sx={{ mr: 0, flexShrink: 0, whiteSpace: 'nowrap' }}
+            sx={{ ml: 0.8, mr: 1, flexShrink: 0, whiteSpace: 'nowrap' }}
           />
         )}
       </Box>
