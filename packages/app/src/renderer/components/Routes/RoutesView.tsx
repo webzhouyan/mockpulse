@@ -41,6 +41,9 @@ import ClearRoundedIcon from '@mui/icons-material/ClearRounded';
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import AltRouteRoundedIcon from '@mui/icons-material/AltRouteRounded';
 import CallSplitRoundedIcon from '@mui/icons-material/CallSplitRounded';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import StorageRoundedIcon from '@mui/icons-material/StorageRounded';
+import WifiTetheringRoundedIcon from '@mui/icons-material/WifiTetheringRounded';
 import InputAdornment from '@mui/material/InputAdornment';
 import { Route, RouteResponse, ResponseRule } from '@mockoon/commons';
 import { useApp } from '../../store/AppContext';
@@ -266,7 +269,10 @@ export const RoutesView: React.FC = () => {
           backgroundColor:
             theme.palette.mode === 'light'
               ? alpha(theme.palette.background.paper, 0.95)
-              : alpha(theme.palette.background.default, 0.9)
+              : alpha(theme.palette.background.default, 0.9),
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1
         }}
       >
         {/* Unified Address Bar Box */}
@@ -453,104 +459,407 @@ export const RoutesView: React.FC = () => {
         </Box>
 
         {/* Documentation / Alias Hint Input below address bar */}
-        <Box sx={{ mt: 0.6, px: 0.4, display: 'flex', alignItems: 'center' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.8,
+            px: 1,
+            py: 0.35,
+            borderRadius: 1.2,
+            backgroundColor:
+              theme.palette.mode === 'light'
+                ? alpha(theme.palette.grey[100], 0.6)
+                : alpha(theme.palette.background.paper, 0.4),
+            border: `1px dashed ${alpha(theme.palette.divider, 0.7)}`,
+            transition: 'all 0.15s ease',
+            '&:hover, &:focus-within': {
+              backgroundColor:
+                theme.palette.mode === 'light' ? '#ffffff' : alpha(theme.palette.background.paper, 0.8),
+              borderColor: alpha(theme.palette.primary.main, 0.5)
+            }
+          }}
+        >
+          <DescriptionOutlinedIcon sx={{ fontSize: 15, color: theme.palette.text.disabled, flexShrink: 0 }} />
           <InputBase
             placeholder={
-              t.routes.docPlaceholder ||
-              '添加接口文档描述 / 别名（例如：用户登录鉴权、获取商品列表）'
+              locale === 'zh-CN'
+                ? '添加接口文档说明 / 别名（如：用户数据 CRUD 自动化服务）...'
+                : 'Add route documentation or description (e.g. Users CRUD Service)...'
             }
             value={activeRoute.documentation || ''}
             onChange={(e) => updateRoute((r) => ({ ...r, documentation: e.target.value }))}
             sx={{
-              width: '100%',
+              flex: 1,
               fontSize: '0.74rem',
-              color: theme.palette.text.secondary
+              color: theme.palette.text.secondary,
+              '& input': { py: 0.1 }
             }}
           />
         </Box>
 
-        {/* CRUD Route Special Setting */}
+        {/* CRUD Route Special Setting Card */}
         {activeRoute.type === 'crud' && (
-          <Box
+          <Paper
+            elevation={0}
             sx={{
-              mt: 1,
-              p: 1,
+              p: 1.2,
               px: 1.5,
-              borderRadius: 1.5,
-              backgroundColor: alpha('#8b5cf6', 0.08),
+              borderRadius: 2,
+              backgroundColor:
+                theme.palette.mode === 'light'
+                  ? alpha('#8b5cf6', 0.05)
+                  : alpha('#8b5cf6', 0.1),
               border: `1px solid ${alpha('#8b5cf6', 0.25)}`,
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 2
+              flexDirection: 'column',
+              gap: 1
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#8b5cf6', fontSize: '0.75rem' }}>
-                CRUD 自动化接口:
-              </Typography>
-              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '0.72rem' }}>
-                自动生成 GET /{cleanEndpoint}、GET /{cleanEndpoint}/:id、POST、PUT、DELETE 全部数据操作
-              </Typography>
+            {/* Top row: Title + Settings (Data bucket + ID Key) */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 1.5
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                <Box
+                  sx={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: 1,
+                    backgroundColor: alpha('#8b5cf6', 0.18),
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#8b5cf6'
+                  }}
+                >
+                  <StorageRoundedIcon sx={{ fontSize: 14 }} />
+                </Box>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 800,
+                    color: '#7c3aed',
+                    fontSize: '0.78rem',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {locale === 'zh-CN' ? 'CRUD 数据桶自动化服务' : 'CRUD Data Bucket Service'}
+                </Typography>
+              </Box>
+
+              {/* Controls on Right */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                {/* Data Bucket Selector */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: '0.72rem',
+                      color: theme.palette.text.secondary,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {locale === 'zh-CN' ? '绑定数据桶:' : 'Data Bucket:'}
+                  </Typography>
+                  <Select
+                    size="small"
+                    value={activeResponse?.databucketID || ''}
+                    onChange={(e) => updateActiveResponse((resp) => ({ ...resp, databucketID: e.target.value }))}
+                    displayEmpty
+                    sx={{
+                      height: 26,
+                      fontSize: '0.72rem',
+                      borderRadius: 1.2,
+                      minWidth: 130,
+                      backgroundColor:
+                        theme.palette.mode === 'light' ? '#ffffff' : alpha(theme.palette.background.paper, 0.6),
+                      '& .MuiSelect-select': { py: 0.2, px: 1 }
+                    }}
+                  >
+                    <MenuItem value="" sx={{ fontSize: '0.72rem', color: theme.palette.text.disabled }}>
+                      <em>{locale === 'zh-CN' ? '(未绑定数据桶)' : '(Select Data Bucket)'}</em>
+                    </MenuItem>
+                    {(activeEnvironment.data || []).map((db) => (
+                      <MenuItem key={db.id} value={db.id} sx={{ fontSize: '0.72rem' }}>
+                        {db.name} ({db.id})
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </Box>
+
+                {/* ID Property (crudKey) */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: '0.72rem',
+                      color: theme.palette.text.secondary,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {locale === 'zh-CN' ? '主键字段 (Key):' : 'Key Property:'}
+                  </Typography>
+                  <TextField
+                    size="small"
+                    placeholder="id"
+                    value={activeResponse?.crudKey || 'id'}
+                    onChange={(e) => updateActiveResponse((resp) => ({ ...resp, crudKey: e.target.value }))}
+                    InputProps={{
+                      sx: {
+                        height: 26,
+                        width: 72,
+                        fontSize: '0.75rem',
+                        fontFamily: "'Fira Code', monospace",
+                        borderRadius: 1.2,
+                        backgroundColor:
+                          theme.palette.mode === 'light' ? '#ffffff' : alpha(theme.palette.background.paper, 0.6)
+                      }
+                    }}
+                  />
+                </Box>
+              </Box>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexShrink: 0 }}>
-              <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.72rem', color: theme.palette.text.secondary }}>
-                {locale === 'zh-CN' ? '主键字段 (Key):' : 'Key Property:'}
-              </Typography>
-              <TextField
-                size="small"
-                placeholder="id"
-                value={activeResponse?.crudKey || 'id'}
-                onChange={(e) => updateActiveResponse((resp) => ({ ...resp, crudKey: e.target.value }))}
-                InputProps={{
-                  sx: { height: 24, width: 70, fontSize: '0.75rem', fontFamily: "'Fira Code', monospace", borderRadius: 1 }
+
+            {/* Bottom row: Clean badges for auto-generated endpoints */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.8,
+                flexWrap: 'wrap',
+                pt: 0.8,
+                borderTop: `1px dashed ${alpha('#8b5cf6', 0.2)}`
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{
+                  fontSize: '0.68rem',
+                  fontWeight: 600,
+                  color: theme.palette.text.secondary,
+                  whiteSpace: 'nowrap',
+                  mr: 0.2
                 }}
-              />
+              >
+                {locale === 'zh-CN' ? '自动挂载 5 个 REST 操作:' : 'Auto-generated operations:'}
+              </Typography>
+
+              {/* GET /users */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.4,
+                  px: 0.7,
+                  py: 0.2,
+                  borderRadius: 1,
+                  backgroundColor: alpha('#16a34a', 0.1),
+                  border: `1px solid ${alpha('#16a34a', 0.25)}`
+                }}
+              >
+                <Typography variant="caption" sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#16a34a', fontFamily: "'Fira Code', monospace" }}>
+                  GET
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: '0.68rem', fontFamily: "'Fira Code', monospace", color: theme.palette.text.primary }}>
+                  /{cleanEndpoint}
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: '0.62rem', color: theme.palette.text.secondary, ml: 0.2 }}>
+                  {locale === 'zh-CN' ? '(列表)' : '(List)'}
+                </Typography>
+              </Box>
+
+              {/* GET /users/:id */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.4,
+                  px: 0.7,
+                  py: 0.2,
+                  borderRadius: 1,
+                  backgroundColor: alpha('#16a34a', 0.1),
+                  border: `1px solid ${alpha('#16a34a', 0.25)}`
+                }}
+              >
+                <Typography variant="caption" sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#16a34a', fontFamily: "'Fira Code', monospace" }}>
+                  GET
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: '0.68rem', fontFamily: "'Fira Code', monospace", color: theme.palette.text.primary }}>
+                  /{cleanEndpoint}/:id
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: '0.62rem', color: theme.palette.text.secondary, ml: 0.2 }}>
+                  {locale === 'zh-CN' ? '(详情)' : '(Item)'}
+                </Typography>
+              </Box>
+
+              {/* POST /users */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.4,
+                  px: 0.7,
+                  py: 0.2,
+                  borderRadius: 1,
+                  backgroundColor: alpha('#2563eb', 0.1),
+                  border: `1px solid ${alpha('#2563eb', 0.25)}`
+                }}
+              >
+                <Typography variant="caption" sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#2563eb', fontFamily: "'Fira Code', monospace" }}>
+                  POST
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: '0.68rem', fontFamily: "'Fira Code', monospace", color: theme.palette.text.primary }}>
+                  /{cleanEndpoint}
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: '0.62rem', color: theme.palette.text.secondary, ml: 0.2 }}>
+                  {locale === 'zh-CN' ? '(新增)' : '(Create)'}
+                </Typography>
+              </Box>
+
+              {/* PUT /users/:id */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.4,
+                  px: 0.7,
+                  py: 0.2,
+                  borderRadius: 1,
+                  backgroundColor: alpha('#f59e0b', 0.1),
+                  border: `1px solid ${alpha('#f59e0b', 0.25)}`
+                }}
+              >
+                <Typography variant="caption" sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#d97706', fontFamily: "'Fira Code', monospace" }}>
+                  PUT
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: '0.68rem', fontFamily: "'Fira Code', monospace", color: theme.palette.text.primary }}>
+                  /{cleanEndpoint}/:id
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: '0.62rem', color: theme.palette.text.secondary, ml: 0.2 }}>
+                  {locale === 'zh-CN' ? '(修改)' : '(Update)'}
+                </Typography>
+              </Box>
+
+              {/* DELETE /users/:id */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.4,
+                  px: 0.7,
+                  py: 0.2,
+                  borderRadius: 1,
+                  backgroundColor: alpha('#dc2626', 0.1),
+                  border: `1px solid ${alpha('#dc2626', 0.25)}`
+                }}
+              >
+                <Typography variant="caption" sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#dc2626', fontFamily: "'Fira Code', monospace" }}>
+                  DELETE
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: '0.68rem', fontFamily: "'Fira Code', monospace", color: theme.palette.text.primary }}>
+                  /{cleanEndpoint}/:id
+                </Typography>
+                <Typography variant="caption" sx={{ fontSize: '0.62rem', color: theme.palette.text.secondary, ml: 0.2 }}>
+                  {locale === 'zh-CN' ? '(删除)' : '(Delete)'}
+                </Typography>
+              </Box>
             </Box>
-          </Box>
+          </Paper>
         )}
 
         {/* WebSocket Route Special Setting */}
         {activeRoute.type === 'ws' && (
-          <Box
+          <Paper
+            elevation={0}
             sx={{
-              mt: 1,
-              p: 1,
+              p: 1.2,
               px: 1.5,
-              borderRadius: 1.5,
-              backgroundColor: alpha('#06b6d4', 0.08),
+              borderRadius: 2,
+              backgroundColor:
+                theme.palette.mode === 'light'
+                  ? alpha('#06b6d4', 0.05)
+                  : alpha('#06b6d4', 0.1),
               border: `1px solid ${alpha('#06b6d4', 0.25)}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: 2
+              flexWrap: 'wrap',
+              gap: 1.5
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#06b6d4', fontSize: '0.75rem' }}>
-                WebSocket 实时连接:
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+              <Box
+                sx={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 1,
+                  backgroundColor: alpha('#06b6d4', 0.18),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#06b6d4'
+                }}
+              >
+                <WifiTetheringRoundedIcon sx={{ fontSize: 14 }} />
+              </Box>
+              <Typography
+                variant="caption"
+                sx={{ fontWeight: 800, color: '#0891b2', fontSize: '0.78rem', whiteSpace: 'nowrap' }}
+              >
+                {locale === 'zh-CN' ? 'WebSocket 实时长连接' : 'WebSocket Streaming Service'}
               </Typography>
-              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '0.72rem' }}>
-                支持双向长连接通讯与周期性数据流自动推送。
+              <Typography
+                variant="caption"
+                sx={{ color: theme.palette.text.secondary, fontSize: '0.72rem', display: { xs: 'none', sm: 'inline' } }}
+              >
+                {locale === 'zh-CN' ? '· 支持双向通讯与数据流周期推送' : '· Bi-directional messaging & streaming'}
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.72rem', color: theme.palette.text.secondary }}>
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 600, fontSize: '0.72rem', color: theme.palette.text.secondary, whiteSpace: 'nowrap' }}
+                >
                   {locale === 'zh-CN' ? '推送模式:' : 'Mode:'}
                 </Typography>
                 <Select
                   size="small"
                   value={activeRoute.streamingMode || 'UNICAST'}
                   onChange={(e) => updateRoute((r) => ({ ...r, streamingMode: e.target.value as any }))}
-                  sx={{ height: 24, fontSize: '0.72rem', borderRadius: 1 }}
+                  sx={{
+                    height: 26,
+                    fontSize: '0.72rem',
+                    borderRadius: 1.2,
+                    backgroundColor:
+                      theme.palette.mode === 'light' ? '#ffffff' : alpha(theme.palette.background.paper, 0.6),
+                    '& .MuiSelect-select': { py: 0.2, px: 1 }
+                  }}
                 >
-                  <MenuItem value="UNICAST" sx={{ fontSize: '0.72rem' }}>{locale === 'zh-CN' ? '单播 (Unicast)' : 'Unicast'}</MenuItem>
-                  <MenuItem value="BROADCAST" sx={{ fontSize: '0.72rem' }}>{locale === 'zh-CN' ? '广播 (Broadcast)' : 'Broadcast'}</MenuItem>
+                  <MenuItem value="UNICAST" sx={{ fontSize: '0.72rem' }}>
+                    {locale === 'zh-CN' ? '单播 (Unicast)' : 'Unicast'}
+                  </MenuItem>
+                  <MenuItem value="BROADCAST" sx={{ fontSize: '0.72rem' }}>
+                    {locale === 'zh-CN' ? '广播 (Broadcast)' : 'Broadcast'}
+                  </MenuItem>
                 </Select>
               </Box>
+
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.72rem', color: theme.palette.text.secondary }}>
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 600, fontSize: '0.72rem', color: theme.palette.text.secondary, whiteSpace: 'nowrap' }}
+                >
                   {locale === 'zh-CN' ? '推送周期:' : 'Interval:'}
                 </Typography>
                 <TextField
@@ -559,7 +868,15 @@ export const RoutesView: React.FC = () => {
                   value={activeRoute.streamingInterval || 0}
                   onChange={(e) => updateRoute((r) => ({ ...r, streamingInterval: Math.max(0, Number(e.target.value)) }))}
                   InputProps={{
-                    sx: { height: 24, width: 70, fontSize: '0.75rem', fontFamily: "'Fira Code', monospace", borderRadius: 1 }
+                    sx: {
+                      height: 26,
+                      width: 68,
+                      fontSize: '0.75rem',
+                      fontFamily: "'Fira Code', monospace",
+                      borderRadius: 1.2,
+                      backgroundColor:
+                        theme.palette.mode === 'light' ? '#ffffff' : alpha(theme.palette.background.paper, 0.6)
+                    }
                   }}
                 />
                 <Typography variant="caption" sx={{ fontSize: '0.68rem', color: theme.palette.text.disabled }}>
@@ -567,7 +884,7 @@ export const RoutesView: React.FC = () => {
                 </Typography>
               </Box>
             </Box>
-          </Box>
+          </Paper>
         )}
       </Box>
 
