@@ -13,6 +13,7 @@ import {
   Tab,
   Switch,
   FormControlLabel,
+  Checkbox,
   Chip,
   Paper,
   Button,
@@ -38,6 +39,8 @@ import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
 import ClearRoundedIcon from '@mui/icons-material/ClearRounded';
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
+import AltRouteRoundedIcon from '@mui/icons-material/AltRouteRounded';
+import CallSplitRoundedIcon from '@mui/icons-material/CallSplitRounded';
 import InputAdornment from '@mui/material/InputAdornment';
 import { Route, RouteResponse, ResponseRule } from '@mockoon/commons';
 import { useApp } from '../../store/AppContext';
@@ -70,7 +73,8 @@ export const RoutesView: React.FC = () => {
   const {
     activeEnvironment,
     updateActiveEnvironment,
-    selectedRouteUuid
+    selectedRouteUuid,
+    setActiveTabKey
   } = useApp();
 
   const [selectedResponseIndex, setSelectedResponseIndex] = useState(0);
@@ -177,11 +181,12 @@ export const RoutesView: React.FC = () => {
     if (!activeResponse) return;
     const newRule: ResponseRule = {
       target: 'header',
-      property: '',
+      modifier: '',
       operator: 'equals',
       value: '',
       invert: false
     };
+    (newRule as any).property = '';
     updateActiveResponse((resp) => ({
       ...resp,
       rules: [...(resp.rules || []), newRule]
@@ -463,6 +468,107 @@ export const RoutesView: React.FC = () => {
             }}
           />
         </Box>
+
+        {/* CRUD Route Special Setting */}
+        {activeRoute.type === 'crud' && (
+          <Box
+            sx={{
+              mt: 1,
+              p: 1,
+              px: 1.5,
+              borderRadius: 1.5,
+              backgroundColor: alpha('#8b5cf6', 0.08),
+              border: `1px solid ${alpha('#8b5cf6', 0.25)}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: '#8b5cf6', fontSize: '0.75rem' }}>
+                CRUD 自动化接口:
+              </Typography>
+              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '0.72rem' }}>
+                自动生成 GET /{cleanEndpoint}、GET /{cleanEndpoint}/:id、POST、PUT、DELETE 全部数据操作
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexShrink: 0 }}>
+              <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.72rem', color: theme.palette.text.secondary }}>
+                {locale === 'zh-CN' ? '主键字段 (Key):' : 'Key Property:'}
+              </Typography>
+              <TextField
+                size="small"
+                placeholder="id"
+                value={activeResponse?.crudKey || 'id'}
+                onChange={(e) => updateActiveResponse((resp) => ({ ...resp, crudKey: e.target.value }))}
+                InputProps={{
+                  sx: { height: 24, width: 70, fontSize: '0.75rem', fontFamily: "'Fira Code', monospace", borderRadius: 1 }
+                }}
+              />
+            </Box>
+          </Box>
+        )}
+
+        {/* WebSocket Route Special Setting */}
+        {activeRoute.type === 'ws' && (
+          <Box
+            sx={{
+              mt: 1,
+              p: 1,
+              px: 1.5,
+              borderRadius: 1.5,
+              backgroundColor: alpha('#06b6d4', 0.08),
+              border: `1px solid ${alpha('#06b6d4', 0.25)}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: '#06b6d4', fontSize: '0.75rem' }}>
+                WebSocket 实时连接:
+              </Typography>
+              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '0.72rem' }}>
+                支持双向长连接通讯与周期性数据流自动推送。
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.72rem', color: theme.palette.text.secondary }}>
+                  {locale === 'zh-CN' ? '推送模式:' : 'Mode:'}
+                </Typography>
+                <Select
+                  size="small"
+                  value={activeRoute.streamingMode || 'UNICAST'}
+                  onChange={(e) => updateRoute((r) => ({ ...r, streamingMode: e.target.value as any }))}
+                  sx={{ height: 24, fontSize: '0.72rem', borderRadius: 1 }}
+                >
+                  <MenuItem value="UNICAST" sx={{ fontSize: '0.72rem' }}>{locale === 'zh-CN' ? '单播 (Unicast)' : 'Unicast'}</MenuItem>
+                  <MenuItem value="BROADCAST" sx={{ fontSize: '0.72rem' }}>{locale === 'zh-CN' ? '广播 (Broadcast)' : 'Broadcast'}</MenuItem>
+                </Select>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.72rem', color: theme.palette.text.secondary }}>
+                  {locale === 'zh-CN' ? '推送周期:' : 'Interval:'}
+                </Typography>
+                <TextField
+                  size="small"
+                  type="number"
+                  value={activeRoute.streamingInterval || 0}
+                  onChange={(e) => updateRoute((r) => ({ ...r, streamingInterval: Math.max(0, Number(e.target.value)) }))}
+                  InputProps={{
+                    sx: { height: 24, width: 70, fontSize: '0.75rem', fontFamily: "'Fira Code', monospace", borderRadius: 1 }
+                  }}
+                />
+                <Typography variant="caption" sx={{ fontSize: '0.68rem', color: theme.palette.text.disabled }}>
+                  ms
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        )}
       </Box>
 
       {/* 2. Response Branches Tab Bar */}
@@ -576,7 +682,36 @@ export const RoutesView: React.FC = () => {
           ))}
         </Tabs>
 
-        <Box sx={{ display: 'flex', gap: 0.4, alignItems: 'center', flexShrink: 0 }}>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0 }}>
+          {/* Response Mode Selector */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <AltRouteRoundedIcon sx={{ fontSize: 14, color: theme.palette.text.secondary }} />
+            <Typography variant="caption" sx={{ fontSize: '0.7rem', color: theme.palette.text.secondary, fontWeight: 600 }}>
+              {locale === 'zh-CN' ? '分发模式:' : 'Mode:'}
+            </Typography>
+            <Select
+              size="small"
+              value={activeRoute.responseMode || 'DEFAULT'}
+              onChange={(e) => {
+                const val = e.target.value;
+                updateRoute((r) => ({ ...r, responseMode: val === 'DEFAULT' ? null : (val as any) }));
+              }}
+              sx={{
+                height: 24,
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                borderRadius: 1,
+                '& .MuiSelect-select': { py: 0.1, px: 0.8 }
+              }}
+            >
+              <MenuItem value="DEFAULT" sx={{ fontSize: '0.75rem' }}>{locale === 'zh-CN' ? '规则匹配 (Rules)' : 'Rules matching'}</MenuItem>
+              <MenuItem value="RANDOM" sx={{ fontSize: '0.75rem' }}>{locale === 'zh-CN' ? '随机响应 (Random)' : 'Random'}</MenuItem>
+              <MenuItem value="SEQUENTIAL" sx={{ fontSize: '0.75rem' }}>{locale === 'zh-CN' ? '顺序轮询 (Sequential)' : 'Sequential'}</MenuItem>
+              <MenuItem value="DISABLE_RULES" sx={{ fontSize: '0.75rem' }}>{locale === 'zh-CN' ? '仅默认响应 (Disable rules)' : 'Disable rules'}</MenuItem>
+              <MenuItem value="FALLBACK" sx={{ fontSize: '0.75rem' }}>{locale === 'zh-CN' ? '规则后备 (Fallback)' : 'Fallback'}</MenuItem>
+            </Select>
+          </Box>
+
           <Tooltip title={t.routes.addResponse} arrow>
             <IconButton size="small" onClick={handleAddResponse} sx={{ width: 26, height: 26 }}>
               <AddRoundedIcon sx={{ fontSize: 16 }} />
@@ -764,6 +899,42 @@ export const RoutesView: React.FC = () => {
           }
           sx={{ mr: 0, flexShrink: 0, whiteSpace: 'nowrap' }}
         />
+
+        {/* Disable Templating Switch */}
+        <FormControlLabel
+          control={
+            <Switch
+              size="small"
+              checked={!!activeResponse.disableTemplating}
+              onChange={(e) => updateActiveResponse((resp) => ({ ...resp, disableTemplating: e.target.checked }))}
+            />
+          }
+          label={
+            <Typography variant="caption" sx={{ fontSize: '0.72rem', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
+              {locale === 'zh-CN' ? '禁用模板引擎' : 'Disable Templating'}
+            </Typography>
+          }
+          sx={{ mr: 0, flexShrink: 0, whiteSpace: 'nowrap' }}
+        />
+
+        {/* Fallback to 404 (for FILE responses) */}
+        {activeResponse.bodyType === 'FILE' && (
+          <FormControlLabel
+            control={
+              <Switch
+                size="small"
+                checked={!!activeResponse.fallbackTo404}
+                onChange={(e) => updateActiveResponse((resp) => ({ ...resp, fallbackTo404: e.target.checked }))}
+              />
+            }
+            label={
+              <Typography variant="caption" sx={{ fontSize: '0.72rem', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                {locale === 'zh-CN' ? '缺文件回退404' : '404 on missing file'}
+              </Typography>
+            }
+            sx={{ mr: 0, flexShrink: 0, whiteSpace: 'nowrap' }}
+          />
+        )}
       </Box>
 
       {/* 4. Single Clean Sub-Tabs: Body / Headers / Rules */}
@@ -839,6 +1010,29 @@ export const RoutesView: React.FC = () => {
                   }}
                 >
                   {(activeResponse.rules || []).length}
+                </Box>
+              </Box>
+            }
+          />
+          <Tab
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                <span>{locale === 'zh-CN' ? '回调调用' : 'Callbacks'}</span>
+                <Box
+                  sx={{
+                    px: 0.6,
+                    py: 0.1,
+                    borderRadius: 10,
+                    fontSize: '0.64rem',
+                    fontWeight: 700,
+                    backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                    color: theme.palette.primary.main,
+                    minWidth: 16,
+                    lineHeight: 1,
+                    textAlign: 'center'
+                  }}
+                >
+                  {(activeResponse.callbacks || []).length}
                 </Box>
               </Box>
             }
@@ -1166,7 +1360,22 @@ export const RoutesView: React.FC = () => {
         {/* Panel 2: Rules Table */}
         {responseSubTab === 2 && (
           <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 0.8 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.8 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
+                  {locale === 'zh-CN' ? '规则逻辑关系:' : 'Rules operator:'}
+                </Typography>
+                <Select
+                  size="small"
+                  value={activeResponse.rulesOperator || 'OR'}
+                  onChange={(e) => updateActiveResponse((resp) => ({ ...resp, rulesOperator: e.target.value as any }))}
+                  sx={{ height: 26, fontSize: '0.72rem', borderRadius: 1 }}
+                >
+                  <MenuItem value="OR" sx={{ fontSize: '0.72rem' }}>{locale === 'zh-CN' ? '满足任意条件 (OR)' : 'Match ANY (OR)'}</MenuItem>
+                  <MenuItem value="AND" sx={{ fontSize: '0.72rem' }}>{locale === 'zh-CN' ? '满足所有条件 (AND)' : 'Match ALL (AND)'}</MenuItem>
+                </Select>
+              </Box>
+
               <Button
                 size="small"
                 variant="outlined"
@@ -1179,100 +1388,289 @@ export const RoutesView: React.FC = () => {
             </Box>
 
             <Paper variant="outlined" sx={{ flex: 1, overflowY: 'auto', p: 1, borderRadius: 1.5 }}>
-              {(activeResponse.rules || []).map((rule, idx) => (
-                <Box
-                  key={idx}
-                  sx={{
-                    display: 'flex',
-                    gap: 1,
-                    alignItems: 'center',
-                    mb: 1,
-                    p: 1,
-                    borderRadius: 1,
-                    backgroundColor: alpha(theme.palette.text.primary, 0.02)
-                  }}
-                >
-                  <Select
-                    size="small"
-                    value={rule.target}
-                    onChange={(e) => {
-                      const target = e.target.value as any;
-                      updateActiveResponse((resp) => ({
-                        ...resp,
-                        rules: (resp.rules || []).map((r, i) => (i === idx ? { ...r, target } : r))
-                      }));
-                    }}
-                    sx={{ height: 28, fontSize: '0.75rem', width: 110 }}
-                  >
-                    <MenuItem value="header">Header</MenuItem>
-                    <MenuItem value="query">Query Param</MenuItem>
-                    <MenuItem value="body">Body Path</MenuItem>
-                    <MenuItem value="params">Route Param</MenuItem>
-                  </Select>
-
-                  <TextField
-                    size="small"
-                    placeholder={t.routes.ruleProperty || '属性名 (Property)'}
-                    value={rule.property}
-                    onChange={(e) => {
-                      const property = e.target.value;
-                      updateActiveResponse((resp) => ({
-                        ...resp,
-                        rules: (resp.rules || []).map((r, i) => (i === idx ? { ...r, property } : r))
-                      }));
-                    }}
-                    InputProps={{ sx: { height: 28, fontSize: '0.75rem' } }}
-                    sx={{ flex: 1 }}
-                  />
-
-                  <Select
-                    size="small"
-                    value={rule.operator}
-                    onChange={(e) => {
-                      const operator = e.target.value as any;
-                      updateActiveResponse((resp) => ({
-                        ...resp,
-                        rules: (resp.rules || []).map((r, i) => (i === idx ? { ...r, operator } : r))
-                      }));
-                    }}
-                    sx={{ height: 28, fontSize: '0.75rem', width: 110 }}
-                  >
-                    <MenuItem value="equals">{t.routes.ruleOperatorEquals || '等于 (=)'}</MenuItem>
-                    <MenuItem value="regex_match">{t.routes.ruleOperatorRegex || '正则匹配'}</MenuItem>
-                    <MenuItem value="null">{t.routes.ruleOperatorNull || '为空 (Null)'}</MenuItem>
-                    <MenuItem value="empty_array">{t.routes.ruleOperatorEmptyArray || '空数组'}</MenuItem>
-                  </Select>
-
-                  <TextField
-                    size="small"
-                    placeholder={t.routes.ruleValue || '匹配值 (Value)'}
-                    value={rule.value}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      updateActiveResponse((resp) => ({
-                        ...resp,
-                        rules: (resp.rules || []).map((r, i) => (i === idx ? { ...r, value } : r))
-                      }));
-                    }}
-                    InputProps={{ sx: { height: 28, fontSize: '0.75rem' } }}
-                    sx={{ flex: 1 }}
-                  />
-
-                  <IconButton
-                    size="small"
-                    onClick={() => {
-                      updateActiveResponse((resp) => ({
-                        ...resp,
-                        rules: (resp.rules || []).filter((_, i) => i !== idx)
-                      }));
-                    }}
-                    sx={{ '&:hover': { color: theme.palette.error.main } }}
-                  >
-                    <DeleteOutlineRoundedIcon sx={{ fontSize: 16 }} />
-                  </IconButton>
+              {(activeResponse.rules || []).length === 0 ? (
+                <Box sx={{ p: 3, textAlign: 'center', color: theme.palette.text.disabled, fontSize: '0.8rem' }}>
+                  {locale === 'zh-CN' ? '暂未添加任何条件规则。未设规则时将默认作为后备响应。' : 'No rules defined yet. This response will serve as fallback.'}
                 </Box>
-              ))}
+              ) : (
+                (activeResponse.rules || []).map((rule, idx) => (
+                  <Box
+                    key={idx}
+                    sx={{
+                      display: 'flex',
+                      gap: 1,
+                      alignItems: 'center',
+                      mb: 1,
+                      p: 1,
+                      borderRadius: 1,
+                      backgroundColor: alpha(theme.palette.text.primary, 0.02)
+                    }}
+                  >
+                    <Select
+                      size="small"
+                      value={rule.target || 'header'}
+                      onChange={(e) => {
+                        const target = e.target.value as any;
+                        updateActiveResponse((resp) => ({
+                          ...resp,
+                          rules: (resp.rules || []).map((r, i) => (i === idx ? { ...r, target } : r))
+                        }));
+                      }}
+                      sx={{ height: 28, fontSize: '0.75rem', width: 120 }}
+                    >
+                      <MenuItem value="header">Header</MenuItem>
+                      <MenuItem value="query">Query Param</MenuItem>
+                      <MenuItem value="body">Body (JSONPath)</MenuItem>
+                      <MenuItem value="params">Route Param (:id)</MenuItem>
+                      <MenuItem value="cookie">Cookie</MenuItem>
+                      <MenuItem value="path">Path</MenuItem>
+                      <MenuItem value="method">Method</MenuItem>
+                      <MenuItem value="request_number">Request Count</MenuItem>
+                      <MenuItem value="global_var">Global Var</MenuItem>
+                      <MenuItem value="data_bucket">Data Bucket</MenuItem>
+                      <MenuItem value="templating">Templating</MenuItem>
+                    </Select>
+
+                    <TextField
+                      size="small"
+                      placeholder={t.routes.ruleProperty || '属性 / 键名 (Property)'}
+                      value={rule.modifier || (rule as any).property || ''}
+                      onChange={(e) => {
+                        const modifier = e.target.value;
+                        updateActiveResponse((resp) => ({
+                          ...resp,
+                          rules: (resp.rules || []).map((r, i) =>
+                            i === idx ? { ...r, modifier, property: modifier } : r
+                          )
+                        }));
+                      }}
+                      InputProps={{ sx: { height: 28, fontSize: '0.75rem' } }}
+                      sx={{ flex: 1 }}
+                    />
+
+                    <Select
+                      size="small"
+                      value={rule.operator || 'equals'}
+                      onChange={(e) => {
+                        const operator = e.target.value as any;
+                        updateActiveResponse((resp) => ({
+                          ...resp,
+                          rules: (resp.rules || []).map((r, i) => (i === idx ? { ...r, operator } : r))
+                        }));
+                      }}
+                      sx={{ height: 28, fontSize: '0.75rem', width: 130 }}
+                    >
+                      <MenuItem value="equals">{t.routes.ruleOperatorEquals || '等于 (=)'}</MenuItem>
+                      <MenuItem value="regex">{t.routes.ruleOperatorRegex || '正则匹配'}</MenuItem>
+                      <MenuItem value="regex_i">正则 (忽略大小写)</MenuItem>
+                      <MenuItem value="null">{t.routes.ruleOperatorNull || '为空 (Null)'}</MenuItem>
+                      <MenuItem value="empty_array">{t.routes.ruleOperatorEmptyArray || '空数组'}</MenuItem>
+                      <MenuItem value="array_includes">包含在数组中</MenuItem>
+                      <MenuItem value="valid_json_schema">符合 JSON Schema</MenuItem>
+                    </Select>
+
+                    <TextField
+                      size="small"
+                      placeholder={t.routes.ruleValue || '匹配值 (Value)'}
+                      value={rule.value || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        updateActiveResponse((resp) => ({
+                          ...resp,
+                          rules: (resp.rules || []).map((r, i) => (i === idx ? { ...r, value } : r))
+                        }));
+                      }}
+                      InputProps={{ sx: { height: 28, fontSize: '0.75rem' } }}
+                      sx={{ flex: 1 }}
+                    />
+
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={!!rule.invert}
+                          onChange={(e) => {
+                            const invert = e.target.checked;
+                            updateActiveResponse((resp) => ({
+                              ...resp,
+                              rules: (resp.rules || []).map((r, i) => (i === idx ? { ...r, invert } : r))
+                            }));
+                          }}
+                          sx={{ p: 0.3 }}
+                        />
+                      }
+                      label={<Typography variant="caption" sx={{ fontSize: '0.72rem' }}>取反</Typography>}
+                      sx={{ mr: 0.5, flexShrink: 0 }}
+                    />
+
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        updateActiveResponse((resp) => ({
+                          ...resp,
+                          rules: (resp.rules || []).filter((_, i) => i !== idx)
+                        }));
+                      }}
+                      sx={{ '&:hover': { color: theme.palette.error.main } }}
+                    >
+                      <DeleteOutlineRoundedIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Box>
+                ))
+              )}
             </Paper>
+          </Box>
+        )}
+
+        {/* Panel 3: Callbacks Invocations */}
+        {responseSubTab === 3 && (
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.8 }}>
+              <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                {locale === 'zh-CN'
+                  ? '当请求命中并返回此响应时，自动异步触发已配置的 Webhook 回调。'
+                  : 'Trigger asynchronous webhook callbacks when this response is sent.'}
+              </Typography>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<AddRoundedIcon sx={{ fontSize: 16 }} />}
+                onClick={() => {
+                  const defaultCbUuid = activeEnvironment.callbacks?.[0]?.uuid || '';
+                  updateActiveResponse((resp) => ({
+                    ...resp,
+                    callbacks: [...(resp.callbacks || []), { uuid: defaultCbUuid, latency: 0 }]
+                  }));
+                }}
+                sx={{ fontSize: '0.75rem', py: 0.3 }}
+              >
+                {locale === 'zh-CN' ? '添加回调调用' : 'Add Callback'}
+              </Button>
+            </Box>
+
+            {(!activeEnvironment.callbacks || activeEnvironment.callbacks.length === 0) ? (
+              <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, textAlign: 'center' }}>
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 1.5 }}>
+                  {locale === 'zh-CN'
+                    ? '当前环境尚未定义任何 Webhook 回调。请先在左侧环境导航栏的 [回调 Webhook] 中创建回调，即可在此关联调用。'
+                    : 'No callbacks defined in this environment yet. Create a callback in the Callbacks tab first.'}
+                </Typography>
+                <Button
+                  size="small"
+                  variant="contained"
+                  onClick={() => setActiveTabKey('callbacks')}
+                  sx={{ fontSize: '0.78rem', textTransform: 'none', borderRadius: 1.5 }}
+                >
+                  {locale === 'zh-CN' ? '前往配置 Webhook 回调' : 'Go to Callbacks'}
+                </Button>
+              </Paper>
+            ) : (
+              <Paper variant="outlined" sx={{ flex: 1, overflowY: 'auto', p: 1, borderRadius: 1.5 }}>
+                {(!activeResponse.callbacks || activeResponse.callbacks.length === 0) ? (
+                  <Box sx={{ p: 3, textAlign: 'center', color: theme.palette.text.disabled, fontSize: '0.8rem' }}>
+                    {locale === 'zh-CN' ? '暂未添加任何回调调用，点击右上角按钮添加。' : 'No callbacks added yet.'}
+                  </Box>
+                ) : (
+                  activeResponse.callbacks.map((inv, idx) => (
+                    <Box
+                      key={idx}
+                      sx={{
+                        display: 'flex',
+                        gap: 1.5,
+                        alignItems: 'center',
+                        mb: 1,
+                        p: 1.2,
+                        borderRadius: 1.5,
+                        backgroundColor: alpha(theme.palette.text.primary, 0.02),
+                        border: `1px solid ${theme.palette.divider}`
+                      }}
+                    >
+                      <FormControl size="small" sx={{ flex: 1 }}>
+                        <InputLabel>{locale === 'zh-CN' ? '选择 Webhook 回调' : 'Callback'}</InputLabel>
+                        <Select
+                          value={inv.uuid}
+                          label={locale === 'zh-CN' ? '选择 Webhook 回调' : 'Callback'}
+                          onChange={(e) => {
+                            const uuid = e.target.value;
+                            updateActiveResponse((resp) => ({
+                              ...resp,
+                              callbacks: (resp.callbacks || []).map((c, i) => (i === idx ? { ...c, uuid } : c))
+                            }));
+                          }}
+                          sx={{ height: 32, fontSize: '0.8rem' }}
+                        >
+                          {activeEnvironment.callbacks.map((cb) => (
+                            <MenuItem key={cb.uuid || cb.id} value={cb.uuid}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box
+                                  sx={{
+                                    px: 0.6,
+                                    py: 0.1,
+                                    borderRadius: 0.8,
+                                    fontSize: '0.62rem',
+                                    fontWeight: 800,
+                                    backgroundColor: (METHOD_COLORS[cb.method.toLowerCase()] || METHOD_COLORS.get).bg,
+                                    color: '#ffffff',
+                                    textTransform: 'uppercase'
+                                  }}
+                                >
+                                  {cb.method}
+                                </Box>
+                                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                  {cb.name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontFamily: "'Fira Code', monospace" }}>
+                                  ({cb.uri})
+                                </Typography>
+                              </Box>
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, fontSize: '0.72rem' }}>
+                          {locale === 'zh-CN' ? '延迟调用:' : 'Delay:'}
+                        </Typography>
+                        <TextField
+                          size="small"
+                          type="number"
+                          value={inv.latency}
+                          onChange={(e) => {
+                            const latency = Math.max(0, Number(e.target.value));
+                            updateActiveResponse((resp) => ({
+                              ...resp,
+                              callbacks: (resp.callbacks || []).map((c, i) => (i === idx ? { ...c, latency } : c))
+                            }));
+                          }}
+                          sx={{
+                            width: 72,
+                            '& .MuiInputBase-root': { height: 32, fontSize: '0.75rem', fontFamily: "'Fira Code', monospace", borderRadius: 1 },
+                            '& input': { textAlign: 'center', py: 0.2, px: 0.5 }
+                          }}
+                        />
+                        <Typography variant="caption" sx={{ color: theme.palette.text.disabled, fontSize: '0.68rem' }}>
+                          ms
+                        </Typography>
+                      </Box>
+
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          updateActiveResponse((resp) => ({
+                            ...resp,
+                            callbacks: (resp.callbacks || []).filter((_, i) => i !== idx)
+                          }));
+                        }}
+                        sx={{ '&:hover': { color: theme.palette.error.main } }}
+                      >
+                        <DeleteOutlineRoundedIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Box>
+                  ))
+                )}
+              </Paper>
+            )}
           </Box>
         )}
       </Box>

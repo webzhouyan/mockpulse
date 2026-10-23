@@ -106,6 +106,16 @@ class ApiService {
     return null;
   }
 
+  public async writeFile(filePath: string, data: string): Promise<void> {
+    if (this.hasElectron) {
+      try {
+        await window.api!.invoke('APP_WRITE_FILE', filePath, data);
+      } catch (e) {
+        console.error(`Failed to write file to ${filePath}:`, e);
+      }
+    }
+  }
+
   public async readEnvironment(path: string): Promise<Environment | null> {
     if (this.hasElectron) {
       try {

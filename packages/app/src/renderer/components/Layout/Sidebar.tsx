@@ -52,6 +52,7 @@ export const Sidebar: React.FC = () => {
     clearRecentEnvironments,
     recentLocalEnvironments,
     exportEnvironment,
+    exportEnvironmentToOpenApi,
     duplicateEnvironment,
     deleteEnvironment,
     settings,
@@ -616,7 +617,35 @@ export const Sidebar: React.FC = () => {
           <ListItemIcon>
             <FileDownloadRoundedIcon fontSize="small" />
           </ListItemIcon>
-          {t.sidebar.exportEnvironment}
+          {t.sidebar.exportEnvironment || '导出为环境配置 JSON'}
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            if (menuAnchor) {
+              const env = environments.find((e) => e.uuid === menuAnchor.uuid);
+              if (env) exportEnvironmentToOpenApi(env, 'json');
+            }
+            handleMenuClose();
+          }}
+        >
+          <ListItemIcon>
+            <FileDownloadRoundedIcon fontSize="small" />
+          </ListItemIcon>
+          {locale === 'zh-CN' ? '导出为 OpenAPI v3 (JSON)' : 'Export to OpenAPI v3 (JSON)'}
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            if (menuAnchor) {
+              const env = environments.find((e) => e.uuid === menuAnchor.uuid);
+              if (env) exportEnvironmentToOpenApi(env, 'yaml');
+            }
+            handleMenuClose();
+          }}
+        >
+          <ListItemIcon>
+            <FileDownloadRoundedIcon fontSize="small" />
+          </ListItemIcon>
+          {locale === 'zh-CN' ? '导出为 OpenAPI v3 (YAML)' : 'Export to OpenAPI v3 (YAML)'}
         </MenuItem>
         <MenuItem
           onClick={() => {

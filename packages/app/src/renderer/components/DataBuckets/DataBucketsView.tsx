@@ -38,8 +38,23 @@ export const DataBucketsView: React.FC = () => {
 
   const activeBucket = dataBuckets.find((d) => d.id === selectedId) || dataBuckets[0] || null;
 
+  // Ensure all data buckets have a valid uuid
+  React.useEffect(() => {
+    if (activeEnvironment?.data?.some((d) => !d.uuid)) {
+      updateActiveEnvironment((env) => ({
+        ...env,
+        data: (env.data || []).map((d) => ({
+          ...d,
+          uuid: d.uuid || 'db_' + Math.random().toString(36).substring(2, 10)
+        }))
+      }));
+    }
+  }, [activeEnvironment?.data]);
+
   const handleAddBucket = () => {
+    const uniqueUuid = 'db_' + Math.random().toString(36).substring(2, 10);
     const newBucket: DataBucket = {
+      uuid: uniqueUuid,
       id: 'bucket_' + Math.random().toString(36).substring(2, 8),
       name: `Data Bucket ${dataBuckets.length + 1}`,
       documentation: '',

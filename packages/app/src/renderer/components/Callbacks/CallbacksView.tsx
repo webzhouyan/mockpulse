@@ -53,8 +53,23 @@ export const CallbacksView: React.FC = () => {
 
   const activeCallback = callbacks.find((c) => c.id === selectedId) || callbacks[0] || null;
 
+  // Ensure all callbacks have a valid uuid
+  React.useEffect(() => {
+    if (activeEnvironment?.callbacks?.some((c) => !c.uuid)) {
+      updateActiveEnvironment((env) => ({
+        ...env,
+        callbacks: (env.callbacks || []).map((c) => ({
+          ...c,
+          uuid: c.uuid || 'cb_' + Math.random().toString(36).substring(2, 10)
+        }))
+      }));
+    }
+  }, [activeEnvironment?.callbacks]);
+
   const handleAddCallback = () => {
+    const uniqueUuid = 'cb_' + Math.random().toString(36).substring(2, 10);
     const newCallback: Callback = {
+      uuid: uniqueUuid,
       id: 'cb_' + Math.random().toString(36).substring(2, 8),
       name: `Webhook ${callbacks.length + 1}`,
       documentation: '',

@@ -73,6 +73,7 @@ interface AppContextType {
   clearRecentEnvironments: () => Promise<void>;
   recentLocalEnvironments: RecentLocalEnvironment[];
   exportEnvironment: (env: Environment) => Promise<void>;
+  exportEnvironmentToOpenApi: (env: Environment, format?: 'json' | 'yaml') => Promise<void>;
   duplicateEnvironment: (uuid: string) => Promise<void>;
   deleteEnvironment: (uuid: string) => Promise<void>;
   toggleServer: (uuid: string) => Promise<void>;
@@ -787,6 +788,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  // Export Environment to OpenAPI v3
+  const exportEnvironmentToOpenApi = useCallback(
+    async (env: Environment, format: 'json' | 'yaml' = 'json') => {
+      const converter = new OpenApiConverter();
+      const openapiStr = await converter.convertToOpenAPIV3(env, format, true);
+      const res = await apiService.showSaveDialog({
+        title: `Export ${env.name} to OpenAPI v3 (${format.toUpperCase()})`,
+        defaultPath: `${env.name.toLowerCase().replace(/\s+/g, '-')}-openapi.${format}`,
+        filters: [
+          format === 'yaml'
+            ? { name: 'YAML File (*.yaml)', extensions: ['yaml', 'yml'] }
+            : { name: 'JSON File (*.json)', extensions: ['json'] }
+        ]
+      });
+      if (!res.canceled && res.filePath) {
+        await apiService.writeFile(res.filePath, openapiStr);
+      }
+    },
+    []
+  );
+
   // Duplicate Environment
   const duplicateEnvironment = useCallback(
     async (uuid: string) => {
@@ -1188,6 +1210,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         clearRecentEnvironments,
         recentLocalEnvironments: settings?.recentLocalEnvironments || [],
         exportEnvironment,
+        exportEnvironmentToOpenApi,
         duplicateEnvironment,
         deleteEnvironment,
         toggleServer,
