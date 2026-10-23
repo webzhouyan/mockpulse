@@ -580,7 +580,7 @@ export const RoutesView: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.45)}`,
+          borderBottom: `1px solid ${theme.palette.divider}`,
           backgroundColor:
             theme.palette.mode === 'light'
               ? alpha(theme.palette.background.paper, 0.6)
@@ -731,7 +731,7 @@ export const RoutesView: React.FC = () => {
           alignItems: 'center',
           flexWrap: 'nowrap',
           overflowX: 'auto',
-          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.35)}`,
+          borderBottom: `1px solid ${theme.palette.divider}`,
           backgroundColor:
             theme.palette.mode === 'light'
               ? alpha(theme.palette.grey[50], 0.6)
@@ -940,46 +940,26 @@ export const RoutesView: React.FC = () => {
       {/* 4. Single Clean Sub-Tabs: Body / Headers / Rules */}
       <Box
         sx={{
-          height: 36,
-          minHeight: 36,
+          height: 34,
+          minHeight: 34,
           px: 1.5,
           display: 'flex',
-          alignItems: 'flex-end',
-          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.35)}`,
-          backgroundColor:
-            theme.palette.mode === 'light'
-              ? alpha(theme.palette.background.paper, 0.4)
-              : alpha(theme.palette.background.default, 0.25)
+          alignItems: 'center',
+          borderBottom: `1px solid ${theme.palette.divider}`
         }}
       >
         <Tabs
           value={responseSubTab}
           onChange={(_, v) => setResponseSubTab(v)}
           sx={{
-            minHeight: 36,
-            '& .MuiTabs-indicator': {
-              height: 2.5,
-              borderRadius: '2px 2px 0 0',
-              backgroundColor: theme.palette.primary.main
-            },
+            minHeight: 34,
             '& .MuiTab-root': {
-              minHeight: 36,
+              minHeight: 34,
               py: 0,
-              px: 1.8,
+              px: 1.5,
               fontSize: '0.75rem',
               textTransform: 'none',
-              fontWeight: 500,
-              color: theme.palette.text.secondary,
-              transition: 'all 0.15s ease',
-              borderRadius: '6px 6px 0 0',
-              '&:hover': {
-                color: theme.palette.text.primary,
-                backgroundColor: alpha(theme.palette.action.hover, 0.04)
-              },
-              '&.Mui-selected': {
-                color: theme.palette.primary.main,
-                fontWeight: 700
-              }
+              fontWeight: 600
             }
           }}
         >
@@ -994,21 +974,15 @@ export const RoutesView: React.FC = () => {
                 <span>{t.routes.headersTab || '响应头'}</span>
                 <Box
                   sx={{
-                    px: 0.65,
+                    px: 0.6,
                     py: 0.1,
                     borderRadius: 10,
                     fontSize: '0.64rem',
                     fontWeight: 700,
-                    backgroundColor:
-                      responseSubTab === 1
-                        ? alpha(theme.palette.primary.main, 0.15)
-                        : alpha(theme.palette.text.secondary, 0.1),
-                    color:
-                      responseSubTab === 1
-                        ? theme.palette.primary.main
-                        : theme.palette.text.secondary,
+                    backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                    color: theme.palette.primary.main,
                     minWidth: 16,
-                    lineHeight: 1.1,
+                    lineHeight: 1,
                     textAlign: 'center'
                   }}
                 >
@@ -1023,21 +997,15 @@ export const RoutesView: React.FC = () => {
                 <span>{t.routes.rulesTab || '规则条件'}</span>
                 <Box
                   sx={{
-                    px: 0.65,
+                    px: 0.6,
                     py: 0.1,
                     borderRadius: 10,
                     fontSize: '0.64rem',
                     fontWeight: 700,
-                    backgroundColor:
-                      responseSubTab === 2
-                        ? alpha(theme.palette.primary.main, 0.15)
-                        : alpha(theme.palette.text.secondary, 0.1),
-                    color:
-                      responseSubTab === 2
-                        ? theme.palette.primary.main
-                        : theme.palette.text.secondary,
+                    backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                    color: theme.palette.primary.main,
                     minWidth: 16,
-                    lineHeight: 1.1,
+                    lineHeight: 1,
                     textAlign: 'center'
                   }}
                 >
@@ -1052,21 +1020,15 @@ export const RoutesView: React.FC = () => {
                 <span>{locale === 'zh-CN' ? '回调调用' : 'Callbacks'}</span>
                 <Box
                   sx={{
-                    px: 0.65,
+                    px: 0.6,
                     py: 0.1,
                     borderRadius: 10,
                     fontSize: '0.64rem',
                     fontWeight: 700,
-                    backgroundColor:
-                      responseSubTab === 3
-                        ? alpha(theme.palette.primary.main, 0.15)
-                        : alpha(theme.palette.text.secondary, 0.1),
-                    color:
-                      responseSubTab === 3
-                        ? theme.palette.primary.main
-                        : theme.palette.text.secondary,
+                    backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                    color: theme.palette.primary.main,
                     minWidth: 16,
-                    lineHeight: 1.1,
+                    lineHeight: 1,
                     textAlign: 'center'
                   }}
                 >

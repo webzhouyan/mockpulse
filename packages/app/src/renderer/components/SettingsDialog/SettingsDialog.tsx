@@ -72,7 +72,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.45)}`
+          borderBottom: `1px solid ${theme.palette.divider}`
         }}
       >
         <Typography variant="subtitle1" sx={{ fontWeight: 700, fontSize: '0.95rem' }}>
@@ -318,14 +318,10 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
 
       <DialogActions
         sx={{
-          p: 1.8,
+          p: 1.5,
           px: 3,
-          borderTop: `1px solid ${alpha(theme.palette.divider, 0.45)}`,
-          justifyContent: 'flex-end',
-          backgroundColor:
-            theme.palette.mode === 'light'
-              ? alpha(theme.palette.grey[50], 0.6)
-              : alpha(theme.palette.background.default, 0.3)
+          borderTop: `1px solid ${theme.palette.divider}`,
+          justifyContent: 'flex-end'
         }}
       >
         <Button

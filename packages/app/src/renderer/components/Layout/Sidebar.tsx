@@ -128,7 +128,7 @@ export const Sidebar: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
-          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.5)}`
+          borderBottom: `1px solid ${theme.palette.divider}`
         }}
       >
         {!isSidebarCollapsed ? (
@@ -178,10 +178,11 @@ export const Sidebar: React.FC = () => {
           sx={{
             px: 1.5,
             pt: 1.2,
-            pb: 0.6,
+            pb: 0.8,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            borderBottom: `1px solid ${alpha(theme.palette.divider, 0.5)}`
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
