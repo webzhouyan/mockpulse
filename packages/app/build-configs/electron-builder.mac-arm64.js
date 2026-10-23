@@ -14,7 +14,7 @@ const config = Object.assign({}, commonConfig, {
     ],
     identity: null,
     type: 'distribution',
-    artifactName: 'MockPulse.setup.${version}.${arch}.${ext}'
+    artifactName: 'MockPulse-${version}.${arch}.${ext}'
   },
   dmg: {
     sign: false

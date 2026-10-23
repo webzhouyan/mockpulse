@@ -16,7 +16,7 @@ const config = Object.assign({}, commonConfig, {
       }
     ],
     type: 'distribution',
-    artifactName: 'mockoon.setup.${version}.${arch}.${ext}',
+    artifactName: 'mockpulse-${version}.${arch}.${ext}',
     hardenedRuntime: true,
     gatekeeperAssess: false,
     entitlements: 'build-res/entitlements.mac.plist',

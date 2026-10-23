@@ -15,7 +15,7 @@ const config = Object.assign({}, commonConfig, {
     }
   },
   nsis: {
-    artifactName: 'mockoon.setup.${version}.${ext}'
+    artifactName: 'mockpulse-${version}.${ext}'
   }
 });
 

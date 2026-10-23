@@ -131,10 +131,10 @@ jobs:
 
             | 操作系统 | 安装包格式 | 说明 |
             | :--- | :--- | :--- |
-            | 🪟 **Windows (x64)** | `MockPulse.setup.${{ steps.release_tag.outputs.clean_version }}.exe` | 标准安装程序（支持自定义安装路径） |
-            | 🪟 **Windows (x64)** | `MockPulse.portable.${{ steps.release_tag.outputs.clean_version }}.exe` | 绿色便携版免安装，解压直接运行 |
-            | 🍎 **macOS (Apple Silicon)** | `MockPulse.setup.${{ steps.release_tag.outputs.clean_version }}.arm64.dmg` | 适用于 M1/M2/M3/M4 系列 Mac |
-            | 🍎 **macOS (Intel)** | `MockPulse.setup.${{ steps.release_tag.outputs.clean_version }}.x64.dmg` | 适用于 Intel 架构 Mac |
+            | 🪟 **Windows (x64)** | `MockPulse-${{ steps.release_tag.outputs.clean_version }}.exe` | 标准安装程序（支持自定义安装路径） |
+            | 🪟 **Windows (x64)** | `MockPulse-portable-${{ steps.release_tag.outputs.clean_version }}.exe` | 绿色便携版免安装，解压直接运行 |
+            | 🍎 **macOS (Apple Silicon)** | `MockPulse-${{ steps.release_tag.outputs.clean_version }}.arm64.dmg` | 适用于 M1/M2/M3/M4 系列 Mac |
+            | 🍎 **macOS (Intel)** | `MockPulse-${{ steps.release_tag.outputs.clean_version }}.x64.dmg` | 适用于 Intel 架构 Mac |
             | 🐧 **Linux (x64)** | `MockPulse-${{ steps.release_tag.outputs.clean_version }}.x86_64.AppImage` | 通用独立可执行文件，双击即运行 |
             | 🐧 **Linux (Debian/Ubuntu)** | `MockPulse-${{ steps.release_tag.outputs.clean_version }}.amd64.deb` | `sudo dpkg -i MockPulse-${{ steps.release_tag.outputs.clean_version }}.amd64.deb` |
             | 🐧 **Linux (Fedora/RHEL)** | `MockPulse-${{ steps.release_tag.outputs.clean_version }}.x86_64.rpm` | `sudo rpm -ivh MockPulse-${{ steps.release_tag.outputs.clean_version }}.x86_64.rpm` |

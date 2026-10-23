@@ -13,14 +13,14 @@ const config = Object.assign({}, commonConfig, {
     icon: 'build-res/icon.ico'
   },
   nsis: {
-    artifactName: 'MockPulse.setup.${version}.${ext}',
+    artifactName: 'MockPulse-${version}.${ext}',
     oneClick: false,
     allowToChangeInstallationDirectory: true,
     createDesktopShortcut: true,
     createStartMenuShortcut: true
   },
   portable: {
-    artifactName: 'MockPulse.portable.${version}.${ext}'
+    artifactName: 'MockPulse-portable-${version}.${ext}'
   }
 });
 
