@@ -143,7 +143,21 @@ Grab the latest pre-built package from [GitHub Releases](https://github.com/webz
 | :--- | :--- | :--- |
 | **macOS** | `.dmg` | **Apple Silicon (M1/M2/M3/M4, arm64)** or **Intel (x64)** |
 | **Windows** | `.exe` / `.zip` | **Windows 10 / 11 (x64)** |
-| **Linux** | `.AppImage` / `.deb` | **Ubuntu / Debian / Fedora** |
+| **Linux** | `.AppImage` / `.deb` / `.rpm` | **Ubuntu / Debian / Fedora / CentOS** |
+
+> [!TIP]
+> ### 🍎 macOS Note: Fixing "MockPulse.app is damaged and can't be opened"
+>
+> Because MockPulse is an independent open-source project without a paid Apple commercial developer certificate ($99/year), macOS Gatekeeper automatically quarantines packages downloaded through web browsers (Chrome/Safari) and displays a false-positive warning: *"MockPulse.app is damaged and can't be opened. You should move it to the Trash."*
+>
+> **The app is completely safe and undamaged. Run this single command in Terminal to bypass Gatekeeper (only needed once):**
+>
+> ```bash
+> sudo xattr -rd com.apple.quarantine /Applications/MockPulse.app
+> ```
+> *Press Enter and type your Mac login password (characters will not show while typing, just hit Enter). You can now open MockPulse normally!*
+>
+> Alternatively, go to **System Settings ➔ Privacy & Security**, scroll down to **Security**, and click **"Open Anyway"**.
 
 ---
 
