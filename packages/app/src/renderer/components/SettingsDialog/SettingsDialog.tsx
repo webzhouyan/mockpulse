@@ -90,7 +90,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 2.5, px: 3, display: 'flex', flexDirection: 'column', gap: 2.2 }}>
+      <DialogContent sx={{ px: 3, pb: 3, pt: '24px !important', display: 'flex', flexDirection: 'column', gap: 2.2 }}>
         {/* Appearance & Themes */}
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2 }}>
