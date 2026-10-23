@@ -81,6 +81,16 @@ export const RoutesView: React.FC = () => {
       ? activeRoute.responses[selectedResponseIndex]
       : activeRoute?.responses[0] || null;
 
+  const fullRouteUrl = useMemo(() => {
+    if (!activeEnvironment || !activeRoute) return '';
+    const protocol = activeEnvironment.tlsOptions?.enabled ? 'https' : 'http';
+    const hostname = activeEnvironment.hostname || 'localhost';
+    const port = activeEnvironment.port || 3000;
+    const prefix = (activeEnvironment.endpointPrefix || '').replace(/^\/|\/$/g, '');
+    const ep = (activeRoute.endpoint || '').replace(/^\//, '');
+    return `${protocol}://${hostname}:${port}/${prefix ? prefix + '/' : ''}${ep}`;
+  }, [activeEnvironment, activeRoute]);
+
   const updateRoute = (updater: (prev: Route) => Route) => {
     if (!activeRoute) return;
     updateActiveEnvironment((env) => ({
@@ -193,16 +203,6 @@ export const RoutesView: React.FC = () => {
 
   const methodCfg = METHOD_COLORS[activeRoute.method.toLowerCase()] || METHOD_COLORS.get;
   const cleanEndpoint = activeRoute.endpoint.replace(/^\//, '');
-
-  const fullRouteUrl = useMemo(() => {
-    if (!activeEnvironment) return '';
-    const protocol = activeEnvironment.tlsOptions?.enabled ? 'https' : 'http';
-    const hostname = activeEnvironment.hostname || 'localhost';
-    const port = activeEnvironment.port || 3000;
-    const prefix = (activeEnvironment.endpointPrefix || '').replace(/^\/|\/$/g, '');
-    const ep = cleanEndpoint.replace(/^\//, '');
-    return `${protocol}://${hostname}:${port}/${prefix ? prefix + '/' : ''}${ep}`;
-  }, [activeEnvironment, cleanEndpoint]);
 
   return (
     <Box
