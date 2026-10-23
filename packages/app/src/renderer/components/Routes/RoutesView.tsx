@@ -30,10 +30,15 @@ import {
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import CodeRoundedIcon from '@mui/icons-material/CodeRounded';
 import FolderOpenRoundedIcon from '@mui/icons-material/FolderOpenRounded';
 import TravelExploreRoundedIcon from '@mui/icons-material/TravelExploreRounded';
+import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
+import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
+import ClearRoundedIcon from '@mui/icons-material/ClearRounded';
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
+import InputAdornment from '@mui/material/InputAdornment';
 import { Route, RouteResponse, ResponseRule } from '@mockoon/commons';
 import { useApp } from '../../store/AppContext';
 import { useI18n } from '../../i18n';
@@ -140,11 +145,24 @@ export const RoutesView: React.FC = () => {
 
   const handleDeleteResponse = (uuid: string) => {
     if (!activeRoute || activeRoute.responses.length <= 1) return;
+    const deleteIdx = activeRoute.responses.findIndex((r) => r.uuid === uuid);
+    const newResponses = activeRoute.responses.filter((resp) => resp.uuid !== uuid);
+
+    // If deleted response was default, ensure there is at least one default
+    if (!newResponses.some((r) => r.default) && newResponses.length > 0) {
+      newResponses[0].default = true;
+    }
+
     updateRoute((r) => ({
       ...r,
-      responses: r.responses.filter((resp) => resp.uuid !== uuid)
+      responses: newResponses
     }));
-    setSelectedResponseIndex(0);
+
+    if (selectedResponseIndex >= newResponses.length) {
+      setSelectedResponseIndex(Math.max(0, newResponses.length - 1));
+    } else if (deleteIdx < selectedResponseIndex) {
+      setSelectedResponseIndex(selectedResponseIndex - 1);
+    }
   };
 
   const handleAddHeader = () => {
@@ -170,21 +188,40 @@ export const RoutesView: React.FC = () => {
     }));
   };
 
+  // Safely extract string file path even if previously stored as an object
+  const cleanFilePath = useMemo(() => {
+    if (!activeResponse?.filePath) return '';
+    if (typeof activeResponse.filePath === 'string') return activeResponse.filePath;
+    if (typeof (activeResponse.filePath as any)?.filePaths?.[0] === 'string') {
+      return (activeResponse.filePath as any).filePaths[0];
+    }
+    return '';
+  }, [activeResponse?.filePath]);
+
+  // Auto-heal activeResponse.filePath if it's an object
+  React.useEffect(() => {
+    if (activeResponse?.filePath && typeof activeResponse.filePath !== 'string') {
+      const sanitized = cleanFilePath;
+      updateActiveResponse((resp) => ({ ...resp, filePath: sanitized }));
+    }
+  }, [activeResponse?.filePath, cleanFilePath]);
+
   // Browse local file dialog
   const handleBrowseFile = async () => {
     if (!activeResponse) return;
     try {
-      const selectedPath = await apiService.showOpenDialog({
+      const res = await apiService.showOpenDialog({
         title: '选择响应数据文件',
         buttonLabel: '选择文件',
         filters: [
           { name: 'All Files (*.*)', extensions: ['*'] },
           { name: 'JSON Files (*.json)', extensions: ['json'] },
-          { name: 'Images (*.png, *.jpg, *.svg)', extensions: ['png', 'jpg', 'jpeg', 'svg'] }
+          { name: 'Images (*.png, *.jpg, *.jpeg, *.svg, *.webp)', extensions: ['png', 'jpg', 'jpeg', 'svg', 'webp'] },
+          { name: 'Documents (*.pdf, *.txt, *.csv, *.xml, *.html)', extensions: ['pdf', 'txt', 'csv', 'xml', 'html'] }
         ]
       });
-      if (selectedPath) {
-        updateActiveResponse((resp) => ({ ...resp, filePath: selectedPath }));
+      if (res && !res.canceled && res.filePaths?.[0]) {
+        updateActiveResponse((resp) => ({ ...resp, filePath: res.filePaths[0] }));
       }
     } catch (e) {
       console.error('Failed to browse file:', e);
@@ -464,15 +501,74 @@ export const RoutesView: React.FC = () => {
             <Tab
               key={resp.uuid}
               label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  {resp.default && <StarRoundedIcon sx={{ fontSize: 13, color: '#f59e0b' }} />}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.6,
+                    position: 'relative',
+                    pr: activeRoute.responses.length > 1 ? 2.2 : 0,
+                    '&:hover .tab-delete-btn': {
+                      opacity: 1,
+                      visibility: 'visible',
+                      transform: 'translateY(-50%) scale(1)'
+                    }
+                  }}
+                >
+                  {resp.default && <StarRoundedIcon sx={{ fontSize: 13, color: '#f59e0b', flexShrink: 0 }} />}
                   <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: "'Fira Code', monospace" }}>
                     {resp.statusCode}
                   </Typography>
                   {resp.label && (
-                    <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: theme.palette.text.secondary,
+                        maxWidth: 120,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
                       ({resp.label})
                     </Typography>
+                  )}
+                  {activeRoute.responses.length > 1 && (
+                    <Box
+                      component="span"
+                      className="tab-delete-btn"
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleDeleteResponse(resp.uuid);
+                      }}
+                      sx={{
+                        position: 'absolute',
+                        right: -4,
+                        top: '50%',
+                        transform: 'translateY(-50%) scale(0.8)',
+                        opacity: 0,
+                        visibility: 'hidden',
+                        transition: 'all 0.15s ease-in-out',
+                        width: 17,
+                        height: 17,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: theme.palette.text.secondary,
+                        backgroundColor: alpha(theme.palette.text.primary, 0.08),
+                        cursor: 'pointer',
+                        zIndex: 2,
+                        '&:hover': {
+                          color: theme.palette.error.main,
+                          backgroundColor: alpha(theme.palette.error.main, 0.18)
+                        }
+                      }}
+                      title={t.common.delete || '删除此响应'}
+                    >
+                      <CloseRoundedIcon sx={{ fontSize: 12 }} />
+                    </Box>
                   )}
                 </Box>
               }
@@ -486,13 +582,6 @@ export const RoutesView: React.FC = () => {
               <AddRoundedIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
-          {activeRoute.responses.length > 1 && (
-            <Tooltip title={t.common.delete} arrow>
-              <IconButton size="small" onClick={() => handleDeleteResponse(activeResponse.uuid)} sx={{ width: 26, height: 26 }}>
-                <DeleteOutlineRoundedIcon sx={{ fontSize: 15, color: theme.palette.error.main }} />
-              </IconButton>
-            </Tooltip>
-          )}
         </Box>
       </Box>
 
@@ -580,14 +669,22 @@ export const RoutesView: React.FC = () => {
             size="small"
             type="number"
             value={activeResponse.latency}
-            onChange={(e) => updateActiveResponse((resp) => ({ ...resp, latency: Number(e.target.value) }))}
-            InputProps={{
-              sx: {
+            onChange={(e) => updateActiveResponse((resp) => ({ ...resp, latency: Math.max(0, Number(e.target.value)) }))}
+            sx={{
+              width: 68,
+              minWidth: 68,
+              maxWidth: 68,
+              flexShrink: 0,
+              '& .MuiInputBase-root': {
                 height: 26,
-                width: 65,
                 fontSize: '0.75rem',
                 fontFamily: "'Fira Code', monospace",
                 borderRadius: 1
+              },
+              '& input': {
+                py: 0.2,
+                px: 0.6,
+                textAlign: 'center'
               }
             }}
           />
@@ -791,36 +888,138 @@ export const RoutesView: React.FC = () => {
                   </Button>
                 </Box>
 
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label={t.routes.bodyPath}
-                    placeholder="/path/to/response-data.json or image.png"
-                    value={activeResponse.filePath || ''}
-                    onChange={(e) => updateActiveResponse((resp) => ({ ...resp, filePath: e.target.value }))}
-                  />
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label={t.routes.bodyPath || '选择文件路径'}
+                      placeholder="/path/to/response-data.json or image.png"
+                      value={cleanFilePath}
+                      onChange={(e) => updateActiveResponse((resp) => ({ ...resp, filePath: e.target.value }))}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <InsertDriveFileOutlinedIcon sx={{ fontSize: 18, color: theme.palette.text.secondary }} />
+                          </InputAdornment>
+                        ),
+                        endAdornment: cleanFilePath ? (
+                          <InputAdornment position="end">
+                            <Tooltip title="清除路径" arrow>
+                              <IconButton
+                                size="small"
+                                onClick={() => updateActiveResponse((resp) => ({ ...resp, filePath: '' }))}
+                                sx={{ p: 0.5, color: theme.palette.text.secondary, '&:hover': { color: theme.palette.text.primary } }}
+                              >
+                                <ClearRoundedIcon sx={{ fontSize: 15 }} />
+                              </IconButton>
+                            </Tooltip>
+                          </InputAdornment>
+                        ) : null,
+                        sx: {
+                          borderRadius: 1.5,
+                          fontSize: '0.82rem',
+                          fontFamily: "'Fira Code', monospace"
+                        }
+                      }}
+                    />
 
-                  <Button
-                    variant="contained"
-                    size="small"
-                    startIcon={<FolderOpenRoundedIcon sx={{ fontSize: 16 }} />}
-                    onClick={handleBrowseFile}
-                    sx={{ whiteSpace: 'nowrap', py: 0.8 }}
-                  >
-                    {t.routes.browseFile || '浏览选择'}
-                  </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<FolderOpenRoundedIcon sx={{ fontSize: 16 }} />}
+                      onClick={handleBrowseFile}
+                      sx={{
+                        whiteSpace: 'nowrap',
+                        height: 38,
+                        px: 1.8,
+                        borderRadius: 1.5,
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        flexShrink: 0,
+                        borderColor: theme.palette.divider,
+                        color: theme.palette.text.primary,
+                        backgroundColor:
+                          theme.palette.mode === 'light'
+                            ? alpha(theme.palette.text.primary, 0.03)
+                            : alpha('#ffffff', 0.05),
+                        '&:hover': {
+                          borderColor: theme.palette.primary.main,
+                          backgroundColor: alpha(theme.palette.primary.main, 0.08)
+                        }
+                      }}
+                    >
+                      {t.routes.browseFile || '选择文件...'}
+                    </Button>
 
-                  {activeResponse.filePath && (
                     <Tooltip title={t.routes.locateFile || '在系统访达 / 文件夹中定位该文件'} arrow>
-                      <IconButton
-                        size="small"
-                        onClick={() => apiService.showFile(activeResponse.filePath || '')}
-                        sx={{ width: 34, height: 34 }}
-                      >
-                        <TravelExploreRoundedIcon sx={{ fontSize: 18 }} />
-                      </IconButton>
+                      <span>
+                        <IconButton
+                          size="small"
+                          disabled={!cleanFilePath}
+                          onClick={() => {
+                            if (cleanFilePath) {
+                              apiService.showFile(cleanFilePath);
+                            }
+                          }}
+                          sx={{
+                            width: 38,
+                            height: 38,
+                            borderRadius: 1.5,
+                            border: `1px solid ${theme.palette.divider}`,
+                            color: cleanFilePath ? theme.palette.text.primary : theme.palette.text.disabled,
+                            '&:hover': {
+                              backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                              borderColor: theme.palette.primary.main
+                            }
+                          }}
+                        >
+                          <TravelExploreRoundedIcon sx={{ fontSize: 18 }} />
+                        </IconButton>
+                      </span>
                     </Tooltip>
+
+                    <Tooltip title="在默认应用中打开文件" arrow>
+                      <span>
+                        <IconButton
+                          size="small"
+                          disabled={!cleanFilePath}
+                          onClick={() => {
+                            if (cleanFilePath) {
+                              apiService.openFile(cleanFilePath);
+                            }
+                          }}
+                          sx={{
+                            width: 38,
+                            height: 38,
+                            borderRadius: 1.5,
+                            border: `1px solid ${theme.palette.divider}`,
+                            color: cleanFilePath ? theme.palette.text.primary : theme.palette.text.disabled,
+                            '&:hover': {
+                              backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                              borderColor: theme.palette.primary.main
+                            }
+                          }}
+                        >
+                          <LaunchRoundedIcon sx={{ fontSize: 17 }} />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </Box>
+
+                  {cleanFilePath && (
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: theme.palette.text.secondary,
+                        fontSize: '0.72rem',
+                        fontFamily: "'Fira Code', monospace",
+                        px: 0.5
+                      }}
+                    >
+                      当前文件：{cleanFilePath}
+                    </Typography>
                   )}
                 </Box>
 

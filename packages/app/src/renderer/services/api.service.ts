@@ -208,9 +208,15 @@ class ApiService {
     }
   }
 
-  public showFile(filePath: string): void {
+  public showFile(filePath: string, relativeToFile?: string): void {
     if (this.hasElectron) {
-      window.api!.send('APP_SHOW_FILE', filePath);
+      window.api!.send('APP_SHOW_FILE', filePath, relativeToFile);
+    }
+  }
+
+  public openFile(filePath: string, relativeToFile?: string): void {
+    if (this.hasElectron) {
+      window.api!.send('APP_OPEN_FILE', filePath, relativeToFile);
     }
   }
 }

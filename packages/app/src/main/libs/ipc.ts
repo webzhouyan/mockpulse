@@ -64,15 +64,35 @@ const getDialogDefaultPath = () => {
  * @param relativeToFile
  * @returns
  */
-const buildFilePath = (filePath: string, relativeToFile: string): string => {
+const buildFilePath = (filePath: any, relativeToFile?: string): string => {
   let relativeDir = '';
 
   // if a relative path (mostly a path to an env data file) is provided, extract the directory
-  if (relativeToFile) {
-    relativeDir = pathParse(relativeToFile).dir;
+  if (relativeToFile && typeof relativeToFile === 'string') {
+    try {
+      relativeDir = pathParse(relativeToFile).dir;
+    } catch {
+      relativeDir = '';
+    }
   }
 
-  return pathResolve(relativeDir, filePath);
+  // Handle cases where filePath is an object or string
+  let cleanPath = '';
+  if (typeof filePath === 'string') {
+    cleanPath = filePath;
+  } else if (filePath && typeof filePath === 'object') {
+    cleanPath = filePath.filePath || filePath.filePaths?.[0] || '';
+  }
+
+  if (!cleanPath || !cleanPath.trim()) {
+    return '';
+  }
+
+  try {
+    return pathResolve(relativeDir, cleanPath.trim());
+  } catch {
+    return cleanPath.trim();
+  }
 };
 
 export const initIPCListeners = (mainWindow: BrowserWindow) => {
@@ -102,7 +122,14 @@ export const initIPCListeners = (mainWindow: BrowserWindow) => {
   });
 
   ipcMain.on('APP_SHOW_FILE', (event, filePath, relativeToFile) => {
-    shell.showItemInFolder(buildFilePath(filePath, relativeToFile));
+    try {
+      const fullPath = buildFilePath(filePath, relativeToFile);
+      if (fullPath) {
+        shell.showItemInFolder(fullPath);
+      }
+    } catch (err) {
+      logError(`Failed to show item in folder: ${err}`);
+    }
   });
 
   ipcMain.on('APP_SHOW_FOLDER', (event, name) => {
@@ -288,12 +315,16 @@ export const initIPCListeners = (mainWindow: BrowserWindow) => {
   ipcMain.on(
     'APP_OPEN_FILE',
     async (event, filePath: string, relativeToFile: string) => {
-      const result = await shell.openPath(
-        buildFilePath(filePath, relativeToFile)
-      );
-
-      if (result) {
-        logError(`Failed to open file in default editor: ${result}`);
+      try {
+        const fullPath = buildFilePath(filePath, relativeToFile);
+        if (fullPath) {
+          const result = await shell.openPath(fullPath);
+          if (result) {
+            logError(`Failed to open file in default editor: ${result}`);
+          }
+        }
+      } catch (err) {
+        logError(`APP_OPEN_FILE failed: ${err}`);
       }
     }
   );
