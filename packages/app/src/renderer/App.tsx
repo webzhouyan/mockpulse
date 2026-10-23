@@ -17,6 +17,7 @@ export const AppContent: React.FC = () => {
     setActiveEnvironmentUuid,
     createEnvironment,
     importEnvironment,
+    createEnvironmentFromOpenApi,
     duplicateEnvironment,
     deleteEnvironment,
     toggleServer,
@@ -51,6 +52,10 @@ export const AppContent: React.FC = () => {
 
         case 'NEW_ENVIRONMENT':
           createEnvironment();
+          break;
+
+        case 'NEW_ENVIRONMENT_OPENAPI':
+          createEnvironmentFromOpenApi();
           break;
 
         case 'OPEN_ENVIRONMENT':
@@ -144,6 +149,7 @@ export const AppContent: React.FC = () => {
     serverStatuses,
     createEnvironment,
     importEnvironment,
+    createEnvironmentFromOpenApi,
     duplicateEnvironment,
     deleteEnvironment,
     toggleServer,

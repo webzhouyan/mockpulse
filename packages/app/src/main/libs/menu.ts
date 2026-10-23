@@ -66,15 +66,22 @@ export const createMenu = (mainWindow: BrowserWindow): Menu => {
       submenu: [
         {
           id: 'MENU_NEW_ENVIRONMENT',
-          label: '新建环境 (New Environment)',
+          label: '新建本地环境 (New Local Environment)',
           accelerator: 'CmdOrCtrl+N',
           click: () => {
             mainWindow.webContents.send('APP_MENU', 'NEW_ENVIRONMENT');
           }
         },
         {
+          id: 'MENU_NEW_ENVIRONMENT_OPENAPI',
+          label: '从 OpenAPI/Swagger 新建环境...',
+          click: () => {
+            mainWindow.webContents.send('APP_MENU', 'NEW_ENVIRONMENT_OPENAPI');
+          }
+        },
+        {
           id: 'MENU_OPEN_ENVIRONMENT',
-          label: '导入环境 JSON (Import Environment)...',
+          label: '打开本地环境 JSON (Open Environment)...',
           accelerator: 'CmdOrCtrl+O',
           click: () => {
             mainWindow.webContents.send('APP_MENU', 'OPEN_ENVIRONMENT');

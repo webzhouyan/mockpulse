@@ -27,13 +27,18 @@ import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import FolderOpenRoundedIcon from '@mui/icons-material/FolderOpenRounded';
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
+import ArrowDropDownRoundedIcon from '@mui/icons-material/ArrowDropDownRounded';
+import NoteAddOutlinedIcon from '@mui/icons-material/NoteAddOutlined';
+import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined';
+import PostAddOutlinedIcon from '@mui/icons-material/PostAddOutlined';
+import LaptopRoundedIcon from '@mui/icons-material/LaptopRounded';
 import { useApp } from '../../store/AppContext';
 import { useI18n } from '../../i18n';
 import { apiService } from '../../services/api.service';
 
 export const Sidebar: React.FC = () => {
   const theme = useTheme();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const {
     environments,
     activeEnvironmentUuid,
@@ -42,6 +47,10 @@ export const Sidebar: React.FC = () => {
     toggleServer,
     createEnvironment,
     importEnvironment,
+    createEnvironmentFromOpenApi,
+    openRecentEnvironment,
+    clearRecentEnvironments,
+    recentLocalEnvironments,
     exportEnvironment,
     duplicateEnvironment,
     deleteEnvironment,
@@ -54,6 +63,7 @@ export const Sidebar: React.FC = () => {
   } = useApp();
 
   const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; uuid: string } | null>(null);
+  const [envMenuAnchorEl, setEnvMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [isResizing, setIsResizing] = useState(false);
   const isCompact = layoutDensity === 'compact';
   const sidebarWidth = isSidebarCollapsed ? 52 : (mainMenuSize || 220);
@@ -161,7 +171,7 @@ export const Sidebar: React.FC = () => {
         )}
       </Box>
 
-      {/* Environments List Subheader */}
+      {/* Environments List Subheader (Local + New/Dropdown button 1:1 with original Mockoon) */}
       {!isSidebarCollapsed && (
         <Box
           sx={{
@@ -170,35 +180,187 @@ export const Sidebar: React.FC = () => {
             pb: 0.8,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            borderBottom: `1px solid ${alpha(theme.palette.divider, 0.5)}`
           }}
         >
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 700,
-              color: theme.palette.text.secondary,
-              textTransform: 'uppercase',
-              letterSpacing: 0.6,
-              fontSize: '0.68rem'
-            }}
-          >
-            {t.sidebar.environments} ({environments.length})
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 0.2 }}>
-            <Tooltip title={t.sidebar.importEnvironment} arrow>
-              <IconButton size="small" onClick={importEnvironment} sx={{ p: 0.4 }}>
-                <FileOpenRoundedIcon sx={{ fontSize: 16 }} />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+            <LaptopRoundedIcon sx={{ fontSize: 16, color: theme.palette.text.secondary }} />
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 700,
+                color: theme.palette.text.primary,
+                letterSpacing: 0.3,
+                fontSize: '0.78rem'
+              }}
+            >
+              {t.sidebar.local || 'Local'}
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                fontSize: '0.68rem',
+                color: theme.palette.text.disabled,
+                ml: -0.2
+              }}
+            >
+              ({environments.length})
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.1 }}>
+            <Tooltip title={t.sidebar.newLocalEnvironment || 'New local environment'} arrow>
+              <IconButton size="small" onClick={createEnvironment} sx={{ p: 0.4, borderRadius: 1 }}>
+                <AddRoundedIcon sx={{ fontSize: 17 }} />
               </IconButton>
             </Tooltip>
-            <Tooltip title={t.sidebar.newEnvironment} arrow>
-              <IconButton size="small" onClick={createEnvironment} sx={{ p: 0.4 }}>
-                <AddRoundedIcon sx={{ fontSize: 18 }} />
+            <Tooltip title={locale === 'zh-CN' ? '更多环境选项 (新建 / 打开 / 最近)' : 'More environment options'} arrow>
+              <IconButton
+                size="small"
+                onClick={(e) => setEnvMenuAnchorEl(e.currentTarget)}
+                sx={{
+                  p: 0.4,
+                  borderRadius: 1,
+                  backgroundColor: Boolean(envMenuAnchorEl) ? alpha(theme.palette.text.primary, 0.08) : 'transparent'
+                }}
+              >
+                <ArrowDropDownRoundedIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Tooltip>
           </Box>
         </Box>
       )}
+
+      {/* New/Open Environment Dropdown Menu (1:1 with original Mockoon) */}
+      <Menu
+        anchorEl={envMenuAnchorEl}
+        open={Boolean(envMenuAnchorEl)}
+        onClose={() => setEnvMenuAnchorEl(null)}
+        PaperProps={{
+          sx: {
+            minWidth: 260,
+            maxWidth: 340,
+            mt: 0.5,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.22)',
+            borderRadius: 1.5,
+            border: `1px solid ${theme.palette.divider}`,
+            py: 0.5
+          }
+        }}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+      >
+        <MenuItem
+          onClick={() => {
+            setEnvMenuAnchorEl(null);
+            createEnvironment();
+          }}
+          sx={{ py: 0.8, px: 1.8, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 1.2 }}
+        >
+          <NoteAddOutlinedIcon sx={{ fontSize: 17, color: theme.palette.text.secondary }} />
+          <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: 500 }}>
+            {t.sidebar.newLocalEnvironment || 'New local environment'}
+          </Typography>
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            setEnvMenuAnchorEl(null);
+            importEnvironment();
+          }}
+          sx={{ py: 0.8, px: 1.8, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 1.2 }}
+        >
+          <FolderOpenOutlinedIcon sx={{ fontSize: 17, color: theme.palette.text.secondary }} />
+          <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: 500 }}>
+            {t.sidebar.openLocalEnvironment || 'Open local environment'}
+          </Typography>
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            setEnvMenuAnchorEl(null);
+            createEnvironmentFromOpenApi();
+          }}
+          sx={{ py: 0.8, px: 1.8, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 1.2 }}
+        >
+          <PostAddOutlinedIcon sx={{ fontSize: 17, color: theme.palette.text.secondary }} />
+          <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: 500 }}>
+            {t.sidebar.newFromOpenApi || 'New local environment from OpenAPI/Swagger'}
+          </Typography>
+        </MenuItem>
+
+        {recentLocalEnvironments && recentLocalEnvironments.length > 0 && (
+          <>
+            <Divider sx={{ my: 0.6 }} />
+            {recentLocalEnvironments.map((recent, idx) => (
+              <MenuItem
+                key={recent.path + idx}
+                onClick={() => {
+                  setEnvMenuAnchorEl(null);
+                  openRecentEnvironment(recent.path);
+                }}
+                sx={{
+                  py: 0.7,
+                  px: 1.8,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  gap: 0.2
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    width: '100%',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}
+                >
+                  {recent.name}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontSize: '0.68rem',
+                    color: theme.palette.text.secondary,
+                    width: '100%',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}
+                >
+                  {recent.path}
+                </Typography>
+              </MenuItem>
+            ))}
+            <Divider sx={{ my: 0.6 }} />
+            <MenuItem
+              onClick={() => {
+                setEnvMenuAnchorEl(null);
+                clearRecentEnvironments();
+              }}
+              sx={{
+                py: 0.8,
+                px: 1.8,
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.2,
+                color: theme.palette.text.secondary,
+                '&:hover': { color: theme.palette.error.main }
+              }}
+            >
+              <DeleteOutlineRoundedIcon sx={{ fontSize: 17 }} />
+              <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                {t.sidebar.clearRecentlyOpened || 'Clear recently opened'}
+              </Typography>
+            </MenuItem>
+          </>
+        )}
+      </Menu>
 
       {/* Environments Scrollable List */}
       <Box sx={{ flex: 1, overflowY: 'auto', px: isSidebarCollapsed ? 0.6 : 0.8, py: 0.5 }}>

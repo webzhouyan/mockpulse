@@ -7,7 +7,8 @@ import {
   Environment,
   Folder,
   Route,
-  Transaction
+  Transaction,
+  OpenApiConverter
 } from '@mockoon/commons';
 import React, {
   createContext,
@@ -19,6 +20,7 @@ import React, {
 } from 'react';
 import {
   EnvironmentDescriptor,
+  RecentLocalEnvironment,
   Settings
 } from 'src/shared/models/settings.model';
 import { SupportedLocale } from '../i18n';
@@ -60,6 +62,10 @@ interface AppContextType {
   ) => void;
   createEnvironment: () => Promise<void>;
   importEnvironment: () => Promise<void>;
+  createEnvironmentFromOpenApi: () => Promise<void>;
+  openRecentEnvironment: (path: string) => Promise<void>;
+  clearRecentEnvironments: () => Promise<void>;
+  recentLocalEnvironments: RecentLocalEnvironment[];
   exportEnvironment: (env: Environment) => Promise<void>;
   duplicateEnvironment: (uuid: string) => Promise<void>;
   deleteEnvironment: (uuid: string) => Promise<void>;
@@ -548,48 +554,77 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     setActiveEnvironmentUuid(newEnv.uuid);
 
     if (settings) {
+      const recent: RecentLocalEnvironment = {
+        name: newEnv.name,
+        path: filePath
+      };
+      const recentList = [
+        recent,
+        ...(settings.recentLocalEnvironments || []).filter((r) => r.path !== filePath)
+      ].slice(0, 10);
+
       const nextSettings: Settings = {
         ...settings,
         environments: [...settings.environments, desc],
-        activeEnvironmentUuid: newEnv.uuid
+        activeEnvironmentUuid: newEnv.uuid,
+        recentLocalEnvironments: recentList
       };
       setSettings(nextSettings);
       await apiService.writeSettings(nextSettings);
     }
   }, [environments, settings]);
 
-  // Import Environment
+  // Open Local Environment
   const importEnvironment = useCallback(async () => {
     const res = await apiService.showOpenDialog({
-      filters: [{ name: 'JSON Environment', extensions: ['json'] }],
+      title: 'Open Local Environment JSON',
+      filters: [{ name: 'Mockoon / MockPulse JSON Environment', extensions: ['json'] }],
       properties: ['openFile']
     });
 
     if (!res.canceled && res.filePaths?.[0]) {
       const filePath = res.filePaths[0];
+
+      // Check if already open by file path
+      const existingDesc = settings?.environments.find((d) => d.path === filePath);
+      if (existingDesc) {
+        const existingEnv = environments.find((e) => e.uuid === existingDesc.uuid);
+        if (existingEnv) {
+          setActiveEnvironmentUuid(existingEnv.uuid);
+          return;
+        }
+      }
+
       const data = await apiService.readEnvironment(filePath);
       if (data) {
         const cleanData = sanitizeEnvironment(data);
-        cleanData.uuid = 'env_' + Math.random().toString(36).substring(2, 10);
-        cleanData.name = `${cleanData.name || 'Imported'} (Imported)`;
-        const newPath = await apiService.buildStorageFilePath(cleanData.uuid);
         const desc: EnvironmentDescriptor = {
           uuid: cleanData.uuid,
-          path: newPath,
+          path: filePath,
           cloud: false,
           lastServerHash: null
         };
         await apiService.writeEnvironment(cleanData, desc, true);
 
-        const nextEnvs = [...environments, cleanData];
+        const nextEnvs = [...environments.filter((e) => e.uuid !== cleanData.uuid), cleanData];
         setEnvironments(nextEnvs);
         setActiveEnvironmentUuid(cleanData.uuid);
 
         if (settings) {
+          const recent: RecentLocalEnvironment = {
+            name: cleanData.name,
+            path: filePath
+          };
+          const recentList = [
+            recent,
+            ...(settings.recentLocalEnvironments || []).filter((r) => r.path !== filePath)
+          ].slice(0, 10);
+
           const nextSettings: Settings = {
             ...settings,
-            environments: [...settings.environments, desc],
-            activeEnvironmentUuid: cleanData.uuid
+            environments: [...settings.environments.filter((d) => d.uuid !== cleanData.uuid), desc],
+            activeEnvironmentUuid: cleanData.uuid,
+            recentLocalEnvironments: recentList
           };
           setSettings(nextSettings);
           await apiService.writeSettings(nextSettings);
@@ -597,6 +632,141 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     }
   }, [environments, settings]);
+
+  // New Environment from OpenAPI/Swagger
+  const createEnvironmentFromOpenApi = useCallback(async () => {
+    const res = await apiService.showOpenDialog({
+      title: 'Open OpenAPI / Swagger Specification',
+      filters: [
+        { name: 'OpenAPI / Swagger File', extensions: ['json', 'yaml', 'yml'] },
+        { name: 'All Files', extensions: ['*'] }
+      ],
+      properties: ['openFile']
+    });
+
+    if (!res.canceled && res.filePaths?.[0]) {
+      const filePath = res.filePaths[0];
+      const content = await apiService.readFile(filePath);
+      if (content) {
+        try {
+          const converter = new OpenApiConverter();
+          const maxPort = environments.reduce(
+            (max, env) => Math.max(max, env.port || 3000),
+            2999
+          );
+          const newPort = maxPort + 1;
+          const converted = await converter.convertFromOpenAPI(content, newPort);
+          if (converted) {
+            const cleanData = sanitizeEnvironment(converted);
+            cleanData.uuid = 'env_' + Math.random().toString(36).substring(2, 10);
+            const storagePath = await apiService.buildStorageFilePath(cleanData.uuid);
+            const desc: EnvironmentDescriptor = {
+              uuid: cleanData.uuid,
+              path: storagePath,
+              cloud: false,
+              lastServerHash: null
+            };
+            await apiService.writeEnvironment(cleanData, desc, true);
+
+            const nextEnvs = [...environments, cleanData];
+            setEnvironments(nextEnvs);
+            setActiveEnvironmentUuid(cleanData.uuid);
+
+            if (settings) {
+              const recent: RecentLocalEnvironment = {
+                name: cleanData.name,
+                path: storagePath
+              };
+              const recentList = [
+                recent,
+                ...(settings.recentLocalEnvironments || []).filter((r) => r.path !== storagePath)
+              ].slice(0, 10);
+
+              const nextSettings: Settings = {
+                ...settings,
+                environments: [...settings.environments, desc],
+                activeEnvironmentUuid: cleanData.uuid,
+                recentLocalEnvironments: recentList
+              };
+              setSettings(nextSettings);
+              await apiService.writeSettings(nextSettings);
+            }
+          }
+        } catch (err: any) {
+          console.error('Failed to import OpenAPI/Swagger:', err);
+          alert(err?.message || 'Failed to parse OpenAPI/Swagger specification file.');
+        }
+      }
+    }
+  }, [environments, settings]);
+
+  // Open Recent Environment
+  const openRecentEnvironment = useCallback(
+    async (path: string) => {
+      // 1. Check if already open
+      const existingDesc = settings?.environments.find((desc) => desc.path === path);
+      if (existingDesc) {
+        const existingEnv = environments.find((e) => e.uuid === existingDesc.uuid);
+        if (existingEnv) {
+          setActiveEnvironmentUuid(existingEnv.uuid);
+          return;
+        }
+      }
+
+      // 2. Load from disk
+      const envData = await apiService.readEnvironment(path);
+      if (envData) {
+        const cleanData = sanitizeEnvironment(envData);
+        const desc: EnvironmentDescriptor = {
+          uuid: cleanData.uuid,
+          path,
+          cloud: false,
+          lastServerHash: null
+        };
+        await apiService.writeEnvironment(cleanData, desc, true);
+
+        const nextEnvs = [...environments.filter((e) => e.uuid !== cleanData.uuid), cleanData];
+        setEnvironments(nextEnvs);
+        setActiveEnvironmentUuid(cleanData.uuid);
+
+        if (settings) {
+          const existingDescs = settings.environments.filter((d) => d.uuid !== cleanData.uuid && d.path !== path);
+          const recent: RecentLocalEnvironment = {
+            name: cleanData.name,
+            path
+          };
+          const recentList = [
+            recent,
+            ...(settings.recentLocalEnvironments || []).filter((r) => r.path !== path)
+          ].slice(0, 10);
+
+          const nextSettings: Settings = {
+            ...settings,
+            environments: [...existingDescs, desc],
+            activeEnvironmentUuid: cleanData.uuid,
+            recentLocalEnvironments: recentList
+          };
+          setSettings(nextSettings);
+          await apiService.writeSettings(nextSettings);
+        }
+      } else {
+        alert(`无法读取文件或文件已不存在:\n${path}`);
+      }
+    },
+    [environments, settings]
+  );
+
+  // Clear Recent Environments
+  const clearRecentEnvironments = useCallback(async () => {
+    if (settings) {
+      const nextSettings: Settings = {
+        ...settings,
+        recentLocalEnvironments: []
+      };
+      setSettings(nextSettings);
+      await apiService.writeSettings(nextSettings);
+    }
+  }, [settings]);
 
   // Export Environment
   const exportEnvironment = useCallback(async (env: Environment) => {
@@ -930,6 +1100,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         updateActiveEnvironment,
         createEnvironment,
         importEnvironment,
+        createEnvironmentFromOpenApi,
+        openRecentEnvironment,
+        clearRecentEnvironments,
+        recentLocalEnvironments: settings?.recentLocalEnvironments || [],
         exportEnvironment,
         duplicateEnvironment,
         deleteEnvironment,

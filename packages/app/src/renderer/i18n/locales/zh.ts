@@ -12,6 +12,12 @@ export const zh = {
   },
   sidebar: {
     environments: '环境列表',
+    local: 'Local',
+    newLocalEnvironment: '新建本地环境',
+    openLocalEnvironment: '打开本地环境',
+    newFromOpenApi: '从 OpenAPI/Swagger 新建本地环境',
+    clearRecentlyOpened: '清空最近打开',
+    recentlyOpened: '最近打开记录',
     newEnvironment: '新建环境',
     importEnvironment: '导入环境 JSON',
     exportEnvironment: '导出环境',

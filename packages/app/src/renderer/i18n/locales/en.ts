@@ -12,6 +12,12 @@ export const en = {
   },
   sidebar: {
     environments: 'Environments',
+    local: 'Local',
+    newLocalEnvironment: 'New local environment',
+    openLocalEnvironment: 'Open local environment',
+    newFromOpenApi: 'New local environment from OpenAPI/Swagger',
+    clearRecentlyOpened: 'Clear recently opened',
+    recentlyOpened: 'Recently opened',
     newEnvironment: 'New Environment',
     importEnvironment: 'Import JSON',
     exportEnvironment: 'Export Environment',

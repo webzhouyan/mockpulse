@@ -84,6 +84,17 @@ class ApiService {
   }
 
   // --- Environment Data ---
+  public async readFile(filePath: string): Promise<string | null> {
+    if (this.hasElectron) {
+      try {
+        return await window.api!.invoke('APP_READ_FILE', filePath);
+      } catch (e) {
+        console.error(`Failed to read file from ${filePath}:`, e);
+      }
+    }
+    return null;
+  }
+
   public async readEnvironment(path: string): Promise<Environment | null> {
     if (this.hasElectron) {
       try {
