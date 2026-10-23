@@ -27,7 +27,6 @@ import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import { Callback } from '@mockoon/commons';
 import { useApp } from '../../store/AppContext';
 import { useI18n } from '../../i18n';
-import { Resizer } from '../Common/Resizer';
 
 const HTTP_METHODS = ['post', 'get', 'put', 'patch', 'delete', 'head', 'options'];
 
@@ -47,7 +46,6 @@ export const CallbacksView: React.FC = () => {
   const { activeEnvironment, updateActiveEnvironment, layoutDensity } = useApp();
 
   const isCompact = layoutDensity === 'compact';
-  const [leftWidth, setLeftWidth] = useState<number>(isCompact ? 260 : 300);
   const [copiedSnackbar, setCopiedSnackbar] = useState(false);
 
   const callbacks = activeEnvironment?.callbacks || [];
@@ -114,9 +112,8 @@ export const CallbacksView: React.FC = () => {
       {/* Callback List (Left) */}
       <Box
         sx={{
-          width: leftWidth,
-          minWidth: 200,
-          maxWidth: 520,
+          width: 250,
+          minWidth: 250,
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -124,8 +121,7 @@ export const CallbacksView: React.FC = () => {
           backgroundColor:
             theme.palette.mode === 'light'
               ? alpha(theme.palette.background.paper, 0.4)
-              : alpha(theme.palette.background.default, 0.5),
-          position: 'relative'
+              : alpha(theme.palette.background.default, 0.5)
         }}
       >
         <Box
@@ -245,11 +241,6 @@ export const CallbacksView: React.FC = () => {
               );
             })}
           </List>
-        </Box>
-
-        {/* Resizer */}
-        <Box sx={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 4 }}>
-          <Resizer width={leftWidth} onResize={setLeftWidth} minWidth={200} maxWidth={520} />
         </Box>
       </Box>
 

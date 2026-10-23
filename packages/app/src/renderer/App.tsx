@@ -3,6 +3,7 @@ import { Box, ThemeProvider, CssBaseline } from '@mui/material';
 import { useApp } from './store/AppContext';
 import { getAppTheme } from './theme';
 import { Sidebar } from './components/Layout/Sidebar';
+import { EnvironmentNav } from './components/Layout/EnvironmentNav';
 import { Header } from './components/Layout/Header';
 import { MainContent } from './components/Layout/MainContent';
 import { SettingsDialog } from './components/SettingsDialog/SettingsDialog';
@@ -28,20 +29,24 @@ export const AppContent: React.FC = () => {
           color: theme.palette.text.primary
         }}
       >
-        {/* Left Sidebar: Environments List */}
+        {/* Column 1: Leftmost Sidebar (Environments List) */}
         <Sidebar />
 
-        {/* Right Main Panel: Header + Content */}
+        {/* Column 2: Secondary Navigation Tree (Global Configs + Routes Tree) */}
+        <EnvironmentNav />
+
+        {/* Column 3: Right Main Panel (Header + Main Work Content) */}
         <Box
           sx={{
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
+            minWidth: 0,
             overflow: 'hidden'
           }}
         >
-          {/* Header with scrollable tabs & right actions */}
+          {/* Slim Header with Merged Master Switch & Pulse Dot */}
           <Header onOpenSettings={() => setSettingsOpen(true)} />
 
           {/* Active Tab Main Content */}
@@ -54,4 +59,3 @@ export const AppContent: React.FC = () => {
     </ThemeProvider>
   );
 };
-

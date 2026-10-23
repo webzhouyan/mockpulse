@@ -1,107 +1,78 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
   TextField,
-  Button,
   IconButton,
-  Chip,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
+  Tooltip,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
   Tabs,
   Tab,
+  Switch,
+  FormControlLabel,
+  Chip,
   Paper,
-  Divider,
-  InputAdornment,
+  Button,
   Table,
   TableHead,
   TableRow,
   TableCell,
   TableBody,
-  Switch,
-  FormControlLabel,
-  Tooltip,
-  Snackbar,
-  Alert,
   alpha,
   useTheme
 } from '@mui/material';
+import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
-import StarRoundedIcon from '@mui/icons-material/StarRounded';
-import StarBorderRoundedIcon from '@mui/icons-material/StarBorderRounded';
 import CodeRoundedIcon from '@mui/icons-material/CodeRounded';
-import InsertDriveFileRoundedIcon from '@mui/icons-material/InsertDriveFileRounded';
-import StorageRoundedIcon from '@mui/icons-material/StorageRounded';
-import AutoFixHighRoundedIcon from '@mui/icons-material/AutoFixHighRounded';
-import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import FolderOpenRoundedIcon from '@mui/icons-material/FolderOpenRounded';
-import FileOpenRoundedIcon from '@mui/icons-material/FileOpenRounded';
-import { Route, RouteResponse, Header as ResponseHeader, ResponseRule } from '@mockoon/commons';
+import TravelExploreRoundedIcon from '@mui/icons-material/TravelExploreRounded';
+import { Route, RouteResponse, ResponseRule } from '@mockoon/commons';
 import { useApp } from '../../store/AppContext';
 import { useI18n } from '../../i18n';
 import { apiService } from '../../services/api.service';
-import { Resizer } from '../Common/Resizer';
+import { CodeEditor } from '../Common/CodeEditor';
 
-const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'all'];
+const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head'];
 
-export const METHOD_COLORS: Record<string, { bg: string; text: string }> = {
+const COMMON_STATUS_CODES = [
+  200, 201, 204, 301, 302, 400, 401, 403, 404, 422, 500, 502, 503
+];
+
+const METHOD_COLORS: Record<string, { bg: string; text: string }> = {
   get: { bg: '#10b981', text: '#ffffff' },
   post: { bg: '#3b82f6', text: '#ffffff' },
   put: { bg: '#f59e0b', text: '#ffffff' },
   patch: { bg: '#8b5cf6', text: '#ffffff' },
   delete: { bg: '#ef4444', text: '#ffffff' },
   options: { bg: '#64748b', text: '#ffffff' },
-  head: { bg: '#06b6d4', text: '#ffffff' },
-  all: { bg: '#ec4899', text: '#ffffff' }
+  head: { bg: '#06b6d4', text: '#ffffff' }
 };
-
-const COMMON_STATUS_CODES = [200, 201, 204, 400, 401, 403, 404, 422, 500, 502];
 
 export const RoutesView: React.FC = () => {
   const theme = useTheme();
   const { t } = useI18n();
-  const { activeEnvironment, updateActiveEnvironment, layoutDensity } = useApp();
-  const isCompact = layoutDensity === 'compact';
+  const {
+    activeEnvironment,
+    updateActiveEnvironment,
+    selectedRouteUuid
+  } = useApp();
 
-  const [leftWidth, setLeftWidth] = useState(isCompact ? 260 : 300);
-  const [search, setSearch] = useState('');
-  const [selectedRouteUuid, setSelectedRouteUuid] = useState<string | null>(null);
   const [selectedResponseIndex, setSelectedResponseIndex] = useState(0);
   const [responseSubTab, setResponseSubTab] = useState(0); // 0: Body, 1: Headers, 2: Rules
-  const [copyFeedback, setCopyFeedback] = useState(false);
 
   const routes = activeEnvironment?.routes || [];
+  const activeRoute: Route | null =
+    routes.find((r) => r.uuid === selectedRouteUuid) || routes[0] || null;
 
-  // Filter routes
-  const filteredRoutes = useMemo(() => {
-    if (!search.trim()) return routes;
-    const q = search.toLowerCase();
-    return routes.filter(
-      (r) =>
-        r.endpoint.toLowerCase().includes(q) ||
-        r.method.toLowerCase().includes(q) ||
-        r.documentation?.toLowerCase().includes(q)
-    );
-  }, [routes, search]);
+  const activeResponse: RouteResponse | null =
+    activeRoute && activeRoute.responses[selectedResponseIndex]
+      ? activeRoute.responses[selectedResponseIndex]
+      : activeRoute?.responses[0] || null;
 
-  const activeRoute = useMemo(() => {
-    return routes.find((r) => r.uuid === selectedRouteUuid) || filteredRoutes[0] || routes[0] || null;
-  }, [routes, selectedRouteUuid, filteredRoutes]);
-
-  const activeResponse = useMemo(() => {
-    if (!activeRoute || !activeRoute.responses || activeRoute.responses.length === 0) return null;
-    return activeRoute.responses[selectedResponseIndex] || activeRoute.responses[0];
-  }, [activeRoute, selectedResponseIndex]);
-
-  // Route updates
   const updateRoute = (updater: (prev: Route) => Route) => {
     if (!activeRoute) return;
     updateActiveEnvironment((env) => ({
@@ -110,101 +81,16 @@ export const RoutesView: React.FC = () => {
     }));
   };
 
-  // Response updates
   const updateActiveResponse = (updater: (prev: RouteResponse) => RouteResponse) => {
-    if (!activeResponse || !activeRoute) return;
-    updateRoute((route) => ({
-      ...route,
-      responses: route.responses.map((resp, i) => (resp.uuid === activeResponse.uuid ? updater(resp) : resp))
+    if (!activeRoute || !activeResponse) return;
+    updateRoute((r) => ({
+      ...r,
+      responses: r.responses.map((resp) =>
+        resp.uuid === activeResponse.uuid ? updater(resp) : resp
+      )
     }));
   };
 
-  // Format JSON
-  const handleFormatJson = () => {
-    if (!activeResponse || !activeResponse.body) return;
-    try {
-      const parsed = JSON.parse(activeResponse.body);
-      const formatted = JSON.stringify(parsed, null, 2);
-      updateActiveResponse((resp) => ({ ...resp, body: formatted }));
-    } catch (err) {
-      // not JSON or parse error, ignore
-    }
-  };
-
-  // Copy Body
-  const handleCopyBody = () => {
-    if (!activeResponse) return;
-    apiService.writeClipboard(activeResponse.body || '');
-    setCopyFeedback(true);
-  };
-
-  // Browse File
-  const handleBrowseFile = async () => {
-    const res = await apiService.showOpenDialog({
-      title: 'Select Response File',
-      properties: ['openFile']
-    });
-    if (!res.canceled && res.filePaths?.[0]) {
-      const selectedPath = res.filePaths[0];
-      updateActiveResponse((resp) => ({ ...resp, filePath: selectedPath }));
-    }
-  };
-
-  // Add Route
-  const handleAddRoute = () => {
-    const newRoute: Route = {
-      uuid: 'route_' + Math.random().toString(36).substring(2, 10),
-      type: 'http',
-      documentation: '',
-      method: 'get',
-      endpoint: `endpoint-${routes.length + 1}`,
-      responses: [
-        {
-          uuid: 'resp_' + Math.random().toString(36).substring(2, 10),
-          body: '{\n  "message": "Hello World"\n}',
-          latency: 0,
-          statusCode: 200,
-          label: 'Default 200 OK',
-          headers: [{ key: 'Content-Type', value: 'application/json' }],
-          bodyType: 'INLINE',
-          filePath: '',
-          databucketID: '',
-          sendFileAsBody: false,
-          rules: [],
-          rulesOperator: 'OR',
-          disableTemplating: false,
-          fallbackTo404: false,
-          default: true,
-          crudKey: 'id',
-          callbacks: []
-        }
-      ],
-      responseMode: null,
-      streamingMode: null,
-      streamingInterval: 0
-    };
-
-    updateActiveEnvironment((env) => ({
-      ...env,
-      routes: [...env.routes, newRoute]
-    }));
-    setSelectedRouteUuid(newRoute.uuid);
-    setSelectedResponseIndex(0);
-  };
-
-  // Delete Route
-  const handleDeleteRoute = (uuid: string) => {
-    if (!window.confirm(t.routes.deleteRouteConfirm)) return;
-    updateActiveEnvironment((env) => ({
-      ...env,
-      routes: env.routes.filter((r) => r.uuid !== uuid)
-    }));
-    if (selectedRouteUuid === uuid) {
-      setSelectedRouteUuid(null);
-    }
-  };
-
-  // Add Response
   const handleAddResponse = () => {
     if (!activeRoute) return;
     const newResp: RouteResponse = {
@@ -234,7 +120,6 @@ export const RoutesView: React.FC = () => {
     setSelectedResponseIndex(activeRoute.responses.length);
   };
 
-  // Delete Response
   const handleDeleteResponse = (uuid: string) => {
     if (!activeRoute || activeRoute.responses.length <= 1) return;
     updateRoute((r) => ({
@@ -244,7 +129,6 @@ export const RoutesView: React.FC = () => {
     setSelectedResponseIndex(0);
   };
 
-  // Add Header to response
   const handleAddHeader = () => {
     if (!activeResponse) return;
     updateActiveResponse((resp) => ({
@@ -253,14 +137,13 @@ export const RoutesView: React.FC = () => {
     }));
   };
 
-  // Add Rule to response
   const handleAddRule = () => {
     if (!activeResponse) return;
     const newRule: ResponseRule = {
       target: 'header',
-      property: 'authorization',
+      property: '',
       operator: 'equals',
-      value: 'token123',
+      value: '',
       invert: false
     };
     updateActiveResponse((resp) => ({
@@ -269,779 +152,748 @@ export const RoutesView: React.FC = () => {
     }));
   };
 
+  // Browse local file dialog
+  const handleBrowseFile = async () => {
+    if (!activeResponse) return;
+    try {
+      const selectedPath = await apiService.showOpenDialog({
+        title: '选择响应数据文件',
+        buttonLabel: '选择文件',
+        filters: [
+          { name: 'All Files (*.*)', extensions: ['*'] },
+          { name: 'JSON Files (*.json)', extensions: ['json'] },
+          { name: 'Images (*.png, *.jpg, *.svg)', extensions: ['png', 'jpg', 'jpeg', 'svg'] }
+        ]
+      });
+      if (selectedPath) {
+        updateActiveResponse((resp) => ({ ...resp, filePath: selectedPath }));
+      }
+    } catch (e) {
+      console.error('Failed to browse file:', e);
+    }
+  };
+
+  if (!activeRoute || !activeResponse) {
+    return (
+      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          暂未选择路由接口或暂无路由数据
+        </Typography>
+      </Box>
+    );
+  }
+
+  const methodCfg = METHOD_COLORS[activeRoute.method.toLowerCase()] || METHOD_COLORS.get;
+  const cleanEndpoint = activeRoute.endpoint.replace(/^\//, '');
+
   return (
-    <Box sx={{ display: 'flex', height: '100%', width: '100%', overflow: 'hidden', position: 'relative' }}>
-      {/* Route List Sidebar (Left, resizable) */}
+    <Box
+      sx={{
+        flex: 1,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        backgroundColor: theme.palette.background.default
+      }}
+    >
+      {/* 1. Ultra-Compact Top Route Bar: Method + Path + Doc Alias in ONE ROW */}
       <Box
         sx={{
-          width: leftWidth,
-          minWidth: leftWidth,
-          height: '100%',
+          height: 42,
+          minHeight: 42,
+          px: 1.5,
           display: 'flex',
-          flexDirection: 'column',
+          gap: 1,
+          alignItems: 'center',
+          borderBottom: `1px solid ${theme.palette.divider}`,
           backgroundColor:
             theme.palette.mode === 'light'
-              ? alpha(theme.palette.background.paper, 0.4)
-              : alpha(theme.palette.background.default, 0.5),
-          position: 'relative'
+              ? alpha(theme.palette.background.paper, 0.95)
+              : alpha(theme.palette.background.default, 0.9)
         }}
       >
-        {/* Search & Add */}
-        <Box sx={{ p: isCompact ? 1 : 1.5, display: 'flex', gap: 0.8, alignItems: 'center', borderBottom: `1px solid ${theme.palette.divider}` }}>
-          <TextField
-            fullWidth
-            size="small"
-            placeholder={t.routes.searchPlaceholder}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchRoundedIcon sx={{ fontSize: 16, color: theme.palette.text.secondary }} />
-                </InputAdornment>
-              )
+        {/* Method Select */}
+        <FormControl size="small" sx={{ width: 90, flexShrink: 0 }}>
+          <Select
+            value={activeRoute.method}
+            onChange={(e) => updateRoute((r) => ({ ...r, method: e.target.value as any }))}
+            sx={{
+              height: 30,
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              fontFamily: "'Fira Code', monospace",
+              borderRadius: 1.5,
+              '& .MuiSelect-select': {
+                py: 0.4,
+                px: 1,
+                display: 'flex',
+                alignItems: 'center'
+              }
             }}
-          />
-          <Tooltip title={t.routes.addRoute} arrow>
-            <IconButton
-              size="small"
-              onClick={handleAddRoute}
-              sx={{
-                width: isCompact ? 30 : 34,
-                height: isCompact ? 30 : 34,
-                borderRadius: 1.5,
-                backgroundColor: theme.palette.primary.main,
-                color: '#ffffff',
-                flexShrink: 0,
-                '&:hover': {
-                  backgroundColor: theme.palette.primary.dark
-                }
-              }}
-            >
-              <AddRoundedIcon sx={{ fontSize: 18 }} />
-            </IconButton>
-          </Tooltip>
-        </Box>
-
-        {/* Route Items List */}
-        <Box sx={{ flex: 1, overflowY: 'auto', px: 0.8, py: 0.5 }}>
-          <List sx={{ p: 0 }}>
-            {filteredRoutes.map((route) => {
-              const isSelected = activeRoute?.uuid === route.uuid;
-              const methodConfig = METHOD_COLORS[route.method.toLowerCase()] || METHOD_COLORS.get;
-              const cleanEndpoint = route.endpoint.replace(/^\//, '');
-
+            renderValue={(val) => {
+              const cfg = METHOD_COLORS[val.toLowerCase()] || METHOD_COLORS.get;
               return (
-                <ListItem
-                  key={route.uuid}
-                  disablePadding
-                  secondaryAction={
-                    <IconButton
-                      size="small"
-                      edge="end"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteRoute(route.uuid);
-                      }}
-                      sx={{ opacity: isSelected ? 1 : 0.3, '&:hover': { opacity: 1, color: theme.palette.error.main } }}
-                    >
-                      <DeleteOutlineRoundedIcon sx={{ fontSize: 15 }} />
-                    </IconButton>
-                  }
-                  sx={{ mb: 0.4 }}
+                <Box
+                  sx={{
+                    px: 0.8,
+                    py: 0.1,
+                    borderRadius: 1,
+                    backgroundColor: cfg.bg,
+                    color: cfg.text,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    fontSize: '0.68rem'
+                  }}
                 >
-                  <ListItemButton
-                    selected={isSelected}
-                    onClick={() => {
-                      setSelectedRouteUuid(route.uuid);
-                      setSelectedResponseIndex(0);
-                    }}
+                  {val}
+                </Box>
+              );
+            }}
+          >
+            {HTTP_METHODS.map((m) => {
+              const cfg = METHOD_COLORS[m] || METHOD_COLORS.get;
+              return (
+                <MenuItem key={m} value={m} sx={{ py: 0.6 }}>
+                  <Box
                     sx={{
-                      borderRadius: 1.5,
-                      py: isCompact ? 0.6 : 0.9,
-                      px: isCompact ? 1 : 1.2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.8
+                      px: 0.8,
+                      py: 0.15,
+                      borderRadius: 1,
+                      backgroundColor: cfg.bg,
+                      color: cfg.text,
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      fontFamily: "'Fira Code', monospace",
+                      fontSize: '0.68rem',
+                      minWidth: 46,
+                      textAlign: 'center',
+                      mr: 1
                     }}
                   >
-                    <Box
-                      sx={{
-                        width: 44,
-                        minWidth: 44,
-                        textAlign: 'center',
-                        py: 0.2,
-                        borderRadius: 1,
-                        fontSize: '0.65rem',
-                        fontWeight: 700,
-                        backgroundColor: methodConfig.bg,
-                        color: methodConfig.text,
-                        textTransform: 'uppercase',
-                        fontFamily: "'Fira Code', monospace"
-                      }}
-                    >
-                      {route.method}
-                    </Box>
-
-                    {/* Method & Path separated by a clear slash / */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, overflow: 'hidden' }}>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontFamily: "'Fira Code', monospace",
-                          color: theme.palette.text.disabled,
-                          mr: 0.3,
-                          fontSize: isCompact ? '0.78rem' : '0.85rem'
-                        }}
-                      >
-                        /
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: isSelected ? 600 : 500,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          fontFamily: "'Fira Code', monospace",
-                          fontSize: isCompact ? '0.78rem' : '0.85rem'
-                        }}
-                      >
-                        {cleanEndpoint}
-                      </Typography>
-                    </Box>
-                  </ListItemButton>
-                </ListItem>
+                    {m}
+                  </Box>
+                  <Typography variant="caption" sx={{ textTransform: 'uppercase', fontWeight: 600 }}>
+                    {m}
+                  </Typography>
+                </MenuItem>
               );
             })}
-          </List>
-        </Box>
+          </Select>
+        </FormControl>
 
-        {/* Resizer handle */}
-        <Box sx={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 4 }}>
-          <Resizer width={leftWidth} onResize={setLeftWidth} minWidth={200} maxWidth={520} />
+        <Typography
+          sx={{
+            fontFamily: "'Fira Code', monospace",
+            fontSize: '1rem',
+            fontWeight: 700,
+            color: theme.palette.text.disabled
+          }}
+        >
+          /
+        </Typography>
+
+        {/* Path Input */}
+        <TextField
+          size="small"
+          placeholder="users"
+          value={cleanEndpoint}
+          onChange={(e) => updateRoute((r) => ({ ...r, endpoint: e.target.value.replace(/^\//, '') }))}
+          InputProps={{
+            sx: {
+              height: 30,
+              fontSize: '0.8rem',
+              fontFamily: "'Fira Code', monospace",
+              borderRadius: 1.5
+            }
+          }}
+          sx={{ flex: 1.2, minWidth: 160 }}
+        />
+
+        {/* Documentation / Alias Input */}
+        <TextField
+          size="small"
+          placeholder="接口描述 / 别名 (如: 获取用户列表)"
+          value={activeRoute.documentation || ''}
+          onChange={(e) => updateRoute((r) => ({ ...r, documentation: e.target.value }))}
+          InputProps={{
+            sx: {
+              height: 30,
+              fontSize: '0.78rem',
+              borderRadius: 1.5
+            }
+          }}
+          sx={{ flex: 1, minWidth: 180 }}
+        />
+      </Box>
+
+      {/* 2. Response Branches Tab Bar */}
+      <Box
+        sx={{
+          height: 34,
+          minHeight: 34,
+          px: 1.2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          backgroundColor:
+            theme.palette.mode === 'light'
+              ? alpha(theme.palette.background.paper, 0.6)
+              : alpha(theme.palette.background.default, 0.8)
+        }}
+      >
+        <Tabs
+          value={selectedResponseIndex}
+          onChange={(_, val) => setSelectedResponseIndex(val)}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{
+            minHeight: 34,
+            '& .MuiTab-root': {
+              minHeight: 34,
+              py: 0,
+              px: 1.2,
+              fontSize: '0.75rem',
+              textTransform: 'none'
+            }
+          }}
+        >
+          {activeRoute.responses.map((resp, idx) => (
+            <Tab
+              key={resp.uuid}
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  {resp.default && <StarRoundedIcon sx={{ fontSize: 13, color: '#f59e0b' }} />}
+                  <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: "'Fira Code', monospace" }}>
+                    {resp.statusCode}
+                  </Typography>
+                  {resp.label && (
+                    <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                      ({resp.label})
+                    </Typography>
+                  )}
+                </Box>
+              }
+            />
+          ))}
+        </Tabs>
+
+        <Box sx={{ display: 'flex', gap: 0.4, alignItems: 'center' }}>
+          <Tooltip title={t.routes.addResponse} arrow>
+            <IconButton size="small" onClick={handleAddResponse} sx={{ width: 26, height: 26 }}>
+              <AddRoundedIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Tooltip>
+          {activeRoute.responses.length > 1 && (
+            <Tooltip title={t.common.delete} arrow>
+              <IconButton size="small" onClick={() => handleDeleteResponse(activeResponse.uuid)} sx={{ width: 26, height: 26 }}>
+                <DeleteOutlineRoundedIcon sx={{ fontSize: 15, color: theme.palette.error.main }} />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
       </Box>
 
-      {/* Route Detail & Responses (Right) */}
-      {activeRoute && activeResponse ? (
-        <Box sx={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {/* Route Header (Colored Method Selector & Path with slash /) */}
-          <Paper
-            square
+      {/* 3. Compact Branch Parameters Row (Unified in 1 Row) */}
+      <Box
+        sx={{
+          height: 38,
+          minHeight: 38,
+          px: 1.5,
+          display: 'flex',
+          gap: 1.5,
+          alignItems: 'center',
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          backgroundColor:
+            theme.palette.mode === 'light'
+              ? alpha(theme.palette.grey[50], 0.6)
+              : alpha(theme.palette.background.default, 0.4)
+        }}
+      >
+        {/* Status Code */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, fontSize: '0.72rem' }}>
+            状态码:
+          </Typography>
+          <Select
+            size="small"
+            value={activeResponse.statusCode}
+            onChange={(e) => updateActiveResponse((resp) => ({ ...resp, statusCode: Number(e.target.value) }))}
             sx={{
-              p: isCompact ? 1.5 : 2,
-              borderBottom: `1px solid ${theme.palette.divider}`,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 1.2
+              height: 26,
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              fontFamily: "'Fira Code', monospace",
+              borderRadius: 1,
+              '& .MuiSelect-select': { py: 0.2, px: 0.8 }
             }}
           >
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              {/* Method select with vibrant color badges */}
-              <FormControl size="small" sx={{ width: 115 }}>
-                <Select
-                  value={activeRoute.method}
-                  onChange={(e) => updateRoute((r) => ({ ...r, method: e.target.value as any }))}
-                  renderValue={(val) => {
-                    const cfg = METHOD_COLORS[val.toLowerCase()] || METHOD_COLORS.get;
-                    return (
-                      <Box
-                        sx={{
-                          px: 1,
-                          py: 0.2,
-                          borderRadius: 1,
-                          backgroundColor: cfg.bg,
-                          color: cfg.text,
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          fontFamily: "'Fira Code', monospace",
-                          fontSize: '0.75rem',
-                          textAlign: 'center'
-                        }}
-                      >
-                        {val}
-                      </Box>
-                    );
-                  }}
-                >
-                  {HTTP_METHODS.map((m) => {
-                    const cfg = METHOD_COLORS[m] || METHOD_COLORS.get;
-                    return (
-                      <MenuItem key={m} value={m}>
-                        <Box
-                          sx={{
-                            px: 1,
-                            py: 0.2,
-                            borderRadius: 1,
-                            backgroundColor: cfg.bg,
-                            color: cfg.text,
-                            fontWeight: 700,
-                            textTransform: 'uppercase',
-                            fontFamily: "'Fira Code', monospace",
-                            fontSize: '0.72rem',
-                            minWidth: 50,
-                            textAlign: 'center',
-                            mr: 1
-                          }}
-                        >
-                          {m}
-                        </Box>
-                        <Typography variant="body2" sx={{ textTransform: 'uppercase' }}>
-                          {m}
-                        </Typography>
-                      </MenuItem>
-                    );
-                  })}
-                </Select>
-              </FormControl>
+            {COMMON_STATUS_CODES.map((code) => (
+              <MenuItem key={code} value={code} sx={{ fontSize: '0.75rem' }}>
+                {code}
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
 
-              {/* Slash / separator between method and endpoint */}
-              <Typography
+        {/* Latency */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, fontSize: '0.72rem' }}>
+            延迟:
+          </Typography>
+          <TextField
+            size="small"
+            type="number"
+            value={activeResponse.latency}
+            onChange={(e) => updateActiveResponse((resp) => ({ ...resp, latency: Number(e.target.value) }))}
+            InputProps={{
+              sx: {
+                height: 26,
+                width: 65,
+                fontSize: '0.75rem',
+                fontFamily: "'Fira Code', monospace",
+                borderRadius: 1
+              }
+            }}
+          />
+          <Typography variant="caption" sx={{ color: theme.palette.text.disabled, fontSize: '0.68rem' }}>
+            ms
+          </Typography>
+        </Box>
+
+        {/* Branch Label */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flex: 1 }}>
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, fontSize: '0.72rem' }}>
+            标签:
+          </Typography>
+          <TextField
+            size="small"
+            placeholder="分支说明 (如 200 OK)"
+            value={activeResponse.label || ''}
+            onChange={(e) => updateActiveResponse((resp) => ({ ...resp, label: e.target.value }))}
+            InputProps={{
+              sx: {
+                height: 26,
+                fontSize: '0.75rem',
+                borderRadius: 1
+              }
+            }}
+            sx={{ maxWidth: 200 }}
+          />
+        </Box>
+
+        {/* Set as Default Switch */}
+        <FormControlLabel
+          control={
+            <Switch
+              size="small"
+              checked={!!activeResponse.default}
+              onChange={(e) => {
+                const isChecked = e.target.checked;
+                updateRoute((r) => ({
+                  ...r,
+                  responses: r.responses.map((resp) => ({
+                    ...resp,
+                    default: resp.uuid === activeResponse.uuid ? isChecked : false
+                  }))
+                }));
+              }}
+            />
+          }
+          label={
+            <Typography variant="caption" sx={{ fontSize: '0.72rem', fontWeight: 600 }}>
+              默认响应
+            </Typography>
+          }
+          sx={{ mr: 0 }}
+        />
+      </Box>
+
+      {/* 4. Single Clean Sub-Tabs: Body / Headers / Rules (NO DUPLICATE TABS) */}
+      <Box
+        sx={{
+          height: 34,
+          minHeight: 34,
+          px: 1.5,
+          display: 'flex',
+          alignItems: 'center',
+          borderBottom: `1px solid ${theme.palette.divider}`
+        }}
+      >
+        <Tabs
+          value={responseSubTab}
+          onChange={(_, v) => setResponseSubTab(v)}
+          sx={{
+            minHeight: 34,
+            '& .MuiTab-root': {
+              minHeight: 34,
+              py: 0,
+              px: 1.5,
+              fontSize: '0.75rem',
+              textTransform: 'none',
+              fontWeight: 600
+            }
+          }}
+        >
+          <Tab
+            icon={<CodeRoundedIcon sx={{ fontSize: 14 }} />}
+            iconPosition="start"
+            label="响应内容"
+          />
+          <Tab
+            icon={
+              <Chip
+                size="small"
+                label={activeResponse.headers.length}
+                sx={{ height: 16, fontSize: '0.65rem', ml: 0.5 }}
+              />
+            }
+            iconPosition="end"
+            label="响应头 (Response Headers)"
+          />
+          <Tab
+            icon={
+              <Chip
+                size="small"
+                label={(activeResponse.rules || []).length}
+                sx={{ height: 16, fontSize: '0.65rem', ml: 0.5 }}
+              />
+            }
+            iconPosition="end"
+            label="规则条件 (Rules)"
+          />
+        </Tabs>
+      </Box>
+
+      {/* 5. Sub-Tab Panels (Fills remaining height) */}
+      <Box sx={{ flex: 1, p: 1.2, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Panel 0: Body Editor (With integrated CodeEditor, Gutter & Format/Copy Toolbar) */}
+        {responseSubTab === 0 && (
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+            {activeResponse.bodyType === 'INLINE' && (
+              <CodeEditor
+                value={activeResponse.body || ''}
+                onChange={(val) => updateActiveResponse((resp) => ({ ...resp, body: val }))}
+                bodyType={activeResponse.bodyType}
+                onBodyTypeChange={(type) => updateActiveResponse((resp) => ({ ...resp, bodyType: type }))}
+                placeholder="在此输入响应体内容 (JSON, XML, 文本)..."
+              />
+            )}
+
+            {/* File Response View */}
+            {activeResponse.bodyType === 'FILE' && (
+              <Paper
+                variant="outlined"
                 sx={{
-                  fontFamily: "'Fira Code', monospace",
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
-                  color: theme.palette.text.secondary
+                  p: 2.5,
+                  borderRadius: 2,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2
                 }}
               >
-                /
-              </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    配置文件响应 (File Response)
+                  </Typography>
 
-              {/* Endpoint input */}
-              <TextField
-                fullWidth
-                size="small"
-                label={t.routes.path}
-                value={activeRoute.endpoint.replace(/^\//, '')}
-                onChange={(e) => updateRoute((r) => ({ ...r, endpoint: e.target.value.replace(/^\//, '') }))}
-                sx={{ '& input': { fontFamily: "'Fira Code', monospace" } }}
-              />
-            </Box>
-
-            {/* Route documentation / notes */}
-            <TextField
-              fullWidth
-              size="small"
-              placeholder={t.routes.documentation}
-              value={activeRoute.documentation || ''}
-              onChange={(e) => updateRoute((r) => ({ ...r, documentation: e.target.value }))}
-            />
-          </Paper>
-
-          {/* Response Branches Navigation Tabs */}
-          <Box
-            sx={{
-              px: 1.5,
-              pt: 0.8,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              borderBottom: `1px solid ${theme.palette.divider}`,
-              backgroundColor: theme.palette.background.paper
-            }}
-          >
-            <Tabs
-              value={selectedResponseIndex}
-              onChange={(_, val) => setSelectedResponseIndex(val)}
-              variant="scrollable"
-              scrollButtons="auto"
-              sx={{ minHeight: 36 }}
-            >
-              {activeRoute.responses.map((resp, idx) => (
-                <Tab
-                  key={resp.uuid}
-                  sx={{ minHeight: 36, py: 0.4 }}
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                      {resp.default && <StarRoundedIcon sx={{ fontSize: 14, color: '#f59e0b' }} />}
-                      <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                        {resp.statusCode}
-                      </Typography>
-                      {resp.label && (
-                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                          ({resp.label})
-                        </Typography>
-                      )}
-                    </Box>
-                  }
-                />
-              ))}
-            </Tabs>
-
-            <Box sx={{ display: 'flex', gap: 0.4 }}>
-              <Tooltip title={t.routes.addResponse} arrow>
-                <IconButton size="small" onClick={handleAddResponse}>
-                  <AddRoundedIcon sx={{ fontSize: 18 }} />
-                </IconButton>
-              </Tooltip>
-              {activeRoute.responses.length > 1 && (
-                <Tooltip title={t.common.delete} arrow>
-                  <IconButton size="small" onClick={() => handleDeleteResponse(activeResponse.uuid)}>
-                    <DeleteOutlineRoundedIcon sx={{ fontSize: 16, color: theme.palette.error.main }} />
-                  </IconButton>
-                </Tooltip>
-              )}
-            </Box>
-          </Box>
-
-          {/* Response Branch Configuration Section */}
-          <Box sx={{ flex: 1, overflowY: 'auto', p: isCompact ? 1.5 : 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            {/* Row 1: Status Code, Latency, Branch Label, Default toggle */}
-            <Box sx={{ display: 'flex', gap: 1.2, alignItems: 'center', flexWrap: 'wrap' }}>
-              <FormControl size="small" sx={{ width: 120 }}>
-                <InputLabel>{t.routes.statusCode}</InputLabel>
-                <Select
-                  value={activeResponse.statusCode}
-                  label={t.routes.statusCode}
-                  onChange={(e) => updateActiveResponse((resp) => ({ ...resp, statusCode: Number(e.target.value) }))}
-                >
-                  {COMMON_STATUS_CODES.map((code) => (
-                    <MenuItem key={code} value={code}>
-                      {code}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <TextField
-                size="small"
-                type="number"
-                label={t.routes.latency}
-                value={activeResponse.latency}
-                onChange={(e) => updateActiveResponse((resp) => ({ ...resp, latency: Number(e.target.value) }))}
-                sx={{ width: 120 }}
-              />
-
-              <TextField
-                size="small"
-                label={t.routes.label}
-                value={activeResponse.label || ''}
-                placeholder="200 OK, Error, etc."
-                onChange={(e) => updateActiveResponse((resp) => ({ ...resp, label: e.target.value }))}
-                sx={{ flex: 1, minWidth: 140 }}
-              />
-
-              <FormControlLabel
-                control={
-                  <Switch
+                  <Button
                     size="small"
-                    checked={!!activeResponse.default}
-                    onChange={(e) => {
-                      const isChecked = e.target.checked;
-                      updateRoute((r) => ({
-                        ...r,
-                        responses: r.responses.map((resp) => ({
-                          ...resp,
-                          default: resp.uuid === activeResponse.uuid ? isChecked : false
-                        }))
-                      }));
-                    }}
+                    variant="text"
+                    onClick={() => updateActiveResponse((resp) => ({ ...resp, bodyType: 'INLINE' }))}
+                    sx={{ fontSize: '0.75rem' }}
+                  >
+                    切换回自定义内容 (Inline)
+                  </Button>
+                </Box>
+
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label={t.routes.bodyPath}
+                    placeholder="/path/to/response-data.json or image.png"
+                    value={activeResponse.filePath || ''}
+                    onChange={(e) => updateActiveResponse((resp) => ({ ...resp, filePath: e.target.value }))}
                   />
-                }
-                label={<Typography variant="body2">{t.routes.isDefault}</Typography>}
-              />
-            </Box>
 
-            {/* Row 2: Response documentation / description (Added as requested) */}
-            <TextField
-              fullWidth
-              size="small"
-              placeholder="Add documentation for this response (添加此响应分支的描述与说明)..."
-              value={activeResponse.label && activeResponse.label !== `${activeResponse.statusCode} OK` ? activeResponse.label : ''}
-              onChange={(e) => updateActiveResponse((resp) => ({ ...resp, label: e.target.value }))}
-            />
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<FolderOpenRoundedIcon sx={{ fontSize: 16 }} />}
+                    onClick={handleBrowseFile}
+                    sx={{ whiteSpace: 'nowrap', py: 0.8 }}
+                  >
+                    浏览选择
+                  </Button>
 
-            {/* Sub Tabs: Body / Headers / Rules */}
-            <Box sx={{ borderBottom: `1px solid ${theme.palette.divider}` }}>
-              <Tabs value={responseSubTab} onChange={(_, v) => setResponseSubTab(v)} sx={{ minHeight: 34 }}>
-                <Tab icon={<CodeRoundedIcon sx={{ fontSize: 15 }} />} iconPosition="start" label={t.routes.bodyContent} sx={{ minHeight: 34, py: 0 }} />
-                <Tab
-                  icon={
-                    <Chip
-                      size="small"
-                      label={activeResponse.headers.length}
-                      sx={{ height: 16, fontSize: '0.65rem', mr: 0.5 }}
-                    />
-                  }
-                  iconPosition="end"
-                  label={t.routes.headers}
-                  sx={{ minHeight: 34, py: 0 }}
-                />
-                <Tab
-                  icon={
-                    <Chip
-                      size="small"
-                      label={(activeResponse.rules || []).length}
-                      sx={{ height: 16, fontSize: '0.65rem', mr: 0.5 }}
-                    />
-                  }
-                  iconPosition="end"
-                  label={t.routes.rules}
-                  sx={{ minHeight: 34, py: 0 }}
-                />
-              </Tabs>
-            </Box>
-
-            {/* Sub Tab 0: Body Editor */}
-            {responseSubTab === 0 && (
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                {/* Body Type switch + Format & Copy Actions Toolbar */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-                  <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center' }}>
-                    <Typography variant="caption" sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
-                      {t.routes.bodyType}:
-                    </Typography>
-                    <Chip
-                      size="small"
-                      label={t.routes.bodyInline}
-                      color={activeResponse.bodyType === 'INLINE' ? 'primary' : 'default'}
-                      onClick={() => updateActiveResponse((resp) => ({ ...resp, bodyType: 'INLINE' }))}
-                      sx={{ cursor: 'pointer' }}
-                    />
-                    <Chip
-                      size="small"
-                      label={t.routes.bodyFile}
-                      color={activeResponse.bodyType === 'FILE' ? 'primary' : 'default'}
-                      onClick={() => updateActiveResponse((resp) => ({ ...resp, bodyType: 'FILE' }))}
-                      sx={{ cursor: 'pointer' }}
-                    />
-                    <Chip
-                      size="small"
-                      label={t.routes.bodyDatabucket}
-                      color={activeResponse.bodyType === 'DATABUCKET' ? 'primary' : 'default'}
-                      onClick={() => updateActiveResponse((resp) => ({ ...resp, bodyType: 'DATABUCKET' }))}
-                      sx={{ cursor: 'pointer' }}
-                    />
-                  </Box>
-
-                  {/* Format JSON & Copy buttons for Inline Body */}
-                  {activeResponse.bodyType === 'INLINE' && (
-                    <Box sx={{ display: 'flex', gap: 0.6 }}>
-                      <Tooltip title="Format JSON (格式化 JSON 内容)" arrow>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          startIcon={<AutoFixHighRoundedIcon sx={{ fontSize: 15 }} />}
-                          onClick={handleFormatJson}
-                          sx={{ fontSize: '0.75rem', py: 0.2 }}
-                        >
-                          格式化
-                        </Button>
-                      </Tooltip>
-                      <Tooltip title="Copy Content (复制响应内容)" arrow>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          startIcon={<ContentCopyRoundedIcon sx={{ fontSize: 14 }} />}
-                          onClick={handleCopyBody}
-                          sx={{ fontSize: '0.75rem', py: 0.2 }}
-                        >
-                          复制
-                        </Button>
-                      </Tooltip>
-                    </Box>
+                  {activeResponse.filePath && (
+                    <Tooltip title="在系统访达 / 文件夹中定位该文件" arrow>
+                      <IconButton
+                        size="small"
+                        onClick={() => apiService.showFile(activeResponse.filePath || '')}
+                        sx={{ width: 34, height: 34 }}
+                      >
+                        <TravelExploreRoundedIcon sx={{ fontSize: 18 }} />
+                      </IconButton>
+                    </Tooltip>
                   )}
                 </Box>
 
-                {/* Inline Body Editor */}
-                {activeResponse.bodyType === 'INLINE' && (
-                  <TextField
-                    fullWidth
-                    multiline
-                    minRows={12}
-                    maxRows={24}
-                    value={activeResponse.body}
-                    onChange={(e) => updateActiveResponse((resp) => ({ ...resp, body: e.target.value }))}
-                    sx={{
-                      '& textarea': {
-                        fontFamily: "'Fira Code', monospace",
-                        fontSize: '0.82rem',
-                        lineHeight: 1.45
-                      }
-                    }}
-                  />
-                )}
-
-                {/* File Response (Complete file features: browse, send as body, show in folder) */}
-                {activeResponse.bodyType === 'FILE' && (
-                  <Paper variant="outlined" sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                      配置文件响应 (File Response)
-                    </Typography>
-
-                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label={t.routes.bodyPath}
-                        placeholder="/path/to/response-data.json or image.png"
-                        value={activeResponse.filePath || ''}
-                        onChange={(e) => updateActiveResponse((resp) => ({ ...resp, filePath: e.target.value }))}
-                      />
-                      <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<FileOpenRoundedIcon sx={{ fontSize: 16 }} />}
-                        onClick={handleBrowseFile}
-                        sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
-                      >
-                        选择文件
-                      </Button>
-                      {activeResponse.filePath && (
-                        <Tooltip title="在文件夹中定位此文件" arrow>
-                          <IconButton
-                            size="small"
-                            onClick={() => apiService.showFile(activeResponse.filePath)}
-                            sx={{ border: `1px solid ${theme.palette.divider}` }}
-                          >
-                            <FolderOpenRoundedIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      )}
+                <FormControlLabel
+                  control={
+                    <Switch
+                      size="small"
+                      checked={!!activeResponse.sendFileAsBody}
+                      onChange={(e) => updateActiveResponse((resp) => ({ ...resp, sendFileAsBody: e.target.checked }))}
+                    />
+                  }
+                  label={
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {t.routes.sendFileAsBody}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                        开启后将直接以文件原始内容和推断的二进制/MIME 类型流式发送。
+                      </Typography>
                     </Box>
-
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          size="small"
-                          checked={!!activeResponse.sendFileAsBody}
-                          onChange={(e) => updateActiveResponse((resp) => ({ ...resp, sendFileAsBody: e.target.checked }))}
-                        />
-                      }
-                      label={
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            作为响应主体直接发送 (Send as body)
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                            开启后将把选定文件的实际二进制/纯文本字节流直接输出给调用方，自动适配 MIME 媒体类型。
-                          </Typography>
-                        </Box>
-                      }
-                    />
-                  </Paper>
-                )}
-
-                {/* Databucket Response */}
-                {activeResponse.bodyType === 'DATABUCKET' && (
-                  <FormControl size="small" fullWidth>
-                    <InputLabel>{t.routes.bodyDatabucket}</InputLabel>
-                    <Select
-                      value={activeResponse.databucketID || ''}
-                      label={t.routes.bodyDatabucket}
-                      onChange={(e) => updateActiveResponse((resp) => ({ ...resp, databucketID: e.target.value }))}
-                    >
-                      {(activeEnvironment.data || []).map((db) => (
-                        <MenuItem key={db.id} value={db.id}>
-                          {db.name} ({db.id})
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                )}
-              </Box>
+                  }
+                />
+              </Paper>
             )}
 
-            {/* Sub Tab 1: Headers Editor */}
-            {responseSubTab === 1 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
+            {/* DataBucket View */}
+            {activeResponse.bodyType === 'DATABUCKET' && (
+              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                    {t.routes.headers}
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    绑定数据桶生成 (Data Bucket)
                   </Typography>
-                  <Button size="small" variant="outlined" startIcon={<AddRoundedIcon sx={{ fontSize: 16 }} />} onClick={handleAddHeader}>
-                    {t.routes.addHeader}
+
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={() => updateActiveResponse((resp) => ({ ...resp, bodyType: 'INLINE' }))}
+                    sx={{ fontSize: '0.75rem' }}
+                  >
+                    切换回自定义内容 (Inline)
                   </Button>
                 </Box>
 
-                <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow sx={{ backgroundColor: alpha(theme.palette.text.primary, 0.03) }}>
-                        <TableCell sx={{ fontWeight: 600 }}>{t.routes.headerName}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t.routes.headerValue}</TableCell>
-                        <TableCell width={60} align="center">{t.common.actions}</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {activeResponse.headers.map((h, i) => (
-                        <TableRow key={i}>
-                          <TableCell sx={{ py: 0.6 }}>
-                            <TextField
-                              fullWidth
-                              size="small"
-                              value={h.key}
-                              placeholder="Content-Type"
-                              onChange={(e) => {
-                                const newKey = e.target.value;
-                                updateActiveResponse((resp) => ({
-                                  ...resp,
-                                  headers: resp.headers.map((hdr, idx) => (idx === i ? { ...hdr, key: newKey } : hdr))
-                                }));
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell sx={{ py: 0.6 }}>
-                            <TextField
-                              fullWidth
-                              size="small"
-                              value={h.value}
-                              placeholder="application/json"
-                              onChange={(e) => {
-                                const newVal = e.target.value;
-                                updateActiveResponse((resp) => ({
-                                  ...resp,
-                                  headers: resp.headers.map((hdr, idx) => (idx === i ? { ...hdr, value: newVal } : hdr))
-                                }));
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell align="center" sx={{ py: 0.6 }}>
-                            <IconButton
-                              size="small"
-                              onClick={() => {
-                                updateActiveResponse((resp) => ({
-                                  ...resp,
-                                  headers: resp.headers.filter((_, idx) => idx !== i)
-                                }));
-                              }}
-                              sx={{ color: theme.palette.error.main, p: 0.4 }}
-                            >
-                              <DeleteOutlineRoundedIcon fontSize="small" />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {activeResponse.headers.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={3} align="center" sx={{ py: 3, color: theme.palette.text.secondary }}>
-                            {t.headers.noHeaders}
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </Paper>
-              </Box>
-            )}
-
-            {/* Sub Tab 2: Rules */}
-            {responseSubTab === 2 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                    {t.routes.rulesNotice}
-                  </Typography>
-                  <Button size="small" variant="outlined" startIcon={<AddRoundedIcon sx={{ fontSize: 16 }} />} onClick={handleAddRule}>
-                    {t.routes.addRule}
-                  </Button>
-                </Box>
-
-                {(activeResponse.rules || []).map((rule, idx) => (
-                  <Paper key={idx} variant="outlined" sx={{ p: 1.2, display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <FormControl size="small" sx={{ width: 130 }}>
-                      <Select
-                        value={rule.target}
-                        onChange={(e) => {
-                          const target = e.target.value as any;
-                          updateActiveResponse((resp) => ({
-                            ...resp,
-                            rules: resp.rules.map((r, i) => (i === idx ? { ...r, target } : r))
-                          }));
-                        }}
-                      >
-                        <MenuItem value="header">Header</MenuItem>
-                        <MenuItem value="query">Query param</MenuItem>
-                        <MenuItem value="body">Body (JSONPath)</MenuItem>
-                        <MenuItem value="cookie">Cookie</MenuItem>
-                        <MenuItem value="params">Route param</MenuItem>
-                      </Select>
-                    </FormControl>
-
-                    <TextField
-                      size="small"
-                      placeholder="Property (e.g. auth)"
-                      value={rule.property}
-                      onChange={(e) => {
-                        const property = e.target.value;
-                        updateActiveResponse((resp) => ({
-                          ...resp,
-                          rules: resp.rules.map((r, i) => (i === idx ? { ...r, property } : r))
-                        }));
-                      }}
-                      sx={{ flex: 1 }}
-                    />
-
-                    <FormControl size="small" sx={{ width: 120 }}>
-                      <Select
-                        value={rule.operator}
-                        onChange={(e) => {
-                          const operator = e.target.value as any;
-                          updateActiveResponse((resp) => ({
-                            ...resp,
-                            rules: resp.rules.map((r, i) => (i === idx ? { ...r, operator } : r))
-                          }));
-                        }}
-                      >
-                        <MenuItem value="equals">equals</MenuItem>
-                        <MenuItem value="regex_match">regex</MenuItem>
-                        <MenuItem value="null">is null</MenuItem>
-                        <MenuItem value="empty_array">empty array</MenuItem>
-                      </Select>
-                    </FormControl>
-
-                    <TextField
-                      size="small"
-                      placeholder="Value"
-                      value={rule.value}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        updateActiveResponse((resp) => ({
-                          ...resp,
-                          rules: resp.rules.map((r, i) => (i === idx ? { ...r, value } : r))
-                        }));
-                      }}
-                      sx={{ flex: 1 }}
-                    />
-
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        updateActiveResponse((resp) => ({
-                          ...resp,
-                          rules: resp.rules.filter((_, i) => i !== idx)
-                        }));
-                      }}
-                      sx={{ color: theme.palette.error.main, p: 0.4 }}
-                    >
-                      <DeleteOutlineRoundedIcon fontSize="small" />
-                    </IconButton>
-                  </Paper>
-                ))}
-              </Box>
+                <FormControl fullWidth size="small">
+                  <InputLabel>{t.routes.bodyDatabucket}</InputLabel>
+                  <Select
+                    value={activeResponse.databucketID || ''}
+                    label={t.routes.bodyDatabucket}
+                    onChange={(e) => updateActiveResponse((resp) => ({ ...resp, databucketID: e.target.value }))}
+                  >
+                    {(activeEnvironment.data || []).map((db) => (
+                      <MenuItem key={db.id} value={db.id}>
+                        {db.name} ({db.id})
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Paper>
             )}
           </Box>
-        </Box>
-      ) : (
-        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-            {t.routes.noRoutes}
-          </Typography>
-        </Box>
-      )}
+        )}
 
-      {/* Copy feedback notification */}
-      <Snackbar
-        open={copyFeedback}
-        autoHideDuration={2000}
-        onClose={() => setCopyFeedback(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity="success" sx={{ width: '100%', py: 0.5, px: 2, fontSize: '0.85rem' }}>
-          响应内容已成功复制到剪贴板！
-        </Alert>
-      </Snackbar>
+        {/* Panel 1: Headers Table */}
+        {responseSubTab === 1 && (
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 0.8 }}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<AddRoundedIcon sx={{ fontSize: 16 }} />}
+                onClick={handleAddHeader}
+                sx={{ fontSize: '0.75rem', py: 0.3 }}
+              >
+                添加响应头
+              </Button>
+            </Box>
+
+            <Paper variant="outlined" sx={{ flex: 1, overflowY: 'auto', borderRadius: 1.5 }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: alpha(theme.palette.text.primary, 0.02) }}>
+                    <TableCell sx={{ fontWeight: 600, width: '45%' }}>Header Name</TableCell>
+                    <TableCell sx={{ fontWeight: 600, width: '45%' }}>Header Value</TableCell>
+                    <TableCell width={50} align="center">操作</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {activeResponse.headers.map((h, i) => (
+                    <TableRow key={i}>
+                      <TableCell sx={{ py: 0.5 }}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={h.key}
+                          placeholder="Content-Type"
+                          onChange={(e) => {
+                            const key = e.target.value;
+                            updateActiveResponse((resp) => ({
+                              ...resp,
+                              headers: resp.headers.map((item, idx) => (idx === i ? { ...item, key } : item))
+                            }));
+                          }}
+                          InputProps={{ sx: { height: 28, fontSize: '0.78rem', fontFamily: "'Fira Code', monospace" } }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ py: 0.5 }}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={h.value}
+                          placeholder="application/json"
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            updateActiveResponse((resp) => ({
+                              ...resp,
+                              headers: resp.headers.map((item, idx) => (idx === i ? { ...item, value } : item))
+                            }));
+                          }}
+                          InputProps={{ sx: { height: 28, fontSize: '0.78rem', fontFamily: "'Fira Code', monospace" } }}
+                        />
+                      </TableCell>
+                      <TableCell align="center" sx={{ py: 0.5 }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            updateActiveResponse((resp) => ({
+                              ...resp,
+                              headers: resp.headers.filter((_, idx) => idx !== i)
+                            }));
+                          }}
+                          sx={{ '&:hover': { color: theme.palette.error.main } }}
+                        >
+                          <DeleteOutlineRoundedIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Paper>
+          </Box>
+        )}
+
+        {/* Panel 2: Rules Table */}
+        {responseSubTab === 2 && (
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 0.8 }}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<AddRoundedIcon sx={{ fontSize: 16 }} />}
+                onClick={handleAddRule}
+                sx={{ fontSize: '0.75rem', py: 0.3 }}
+              >
+                添加规则条件
+              </Button>
+            </Box>
+
+            <Paper variant="outlined" sx={{ flex: 1, overflowY: 'auto', p: 1, borderRadius: 1.5 }}>
+              {(activeResponse.rules || []).map((rule, idx) => (
+                <Box
+                  key={idx}
+                  sx={{
+                    display: 'flex',
+                    gap: 1,
+                    alignItems: 'center',
+                    mb: 1,
+                    p: 1,
+                    borderRadius: 1,
+                    backgroundColor: alpha(theme.palette.text.primary, 0.02)
+                  }}
+                >
+                  <Select
+                    size="small"
+                    value={rule.target}
+                    onChange={(e) => {
+                      const target = e.target.value as any;
+                      updateActiveResponse((resp) => ({
+                        ...resp,
+                        rules: (resp.rules || []).map((r, i) => (i === idx ? { ...r, target } : r))
+                      }));
+                    }}
+                    sx={{ height: 28, fontSize: '0.75rem', width: 110 }}
+                  >
+                    <MenuItem value="header">Header</MenuItem>
+                    <MenuItem value="query">Query Param</MenuItem>
+                    <MenuItem value="body">Body Path</MenuItem>
+                    <MenuItem value="params">Route Param</MenuItem>
+                  </Select>
+
+                  <TextField
+                    size="small"
+                    placeholder="属性名 (Property)"
+                    value={rule.property}
+                    onChange={(e) => {
+                      const property = e.target.value;
+                      updateActiveResponse((resp) => ({
+                        ...resp,
+                        rules: (resp.rules || []).map((r, i) => (i === idx ? { ...r, property } : r))
+                      }));
+                    }}
+                    InputProps={{ sx: { height: 28, fontSize: '0.75rem' } }}
+                    sx={{ flex: 1 }}
+                  />
+
+                  <Select
+                    size="small"
+                    value={rule.operator}
+                    onChange={(e) => {
+                      const operator = e.target.value as any;
+                      updateActiveResponse((resp) => ({
+                        ...resp,
+                        rules: (resp.rules || []).map((r, i) => (i === idx ? { ...r, operator } : r))
+                      }));
+                    }}
+                    sx={{ height: 28, fontSize: '0.75rem', width: 100 }}
+                  >
+                    <MenuItem value="equals">等于 (=)</MenuItem>
+                    <MenuItem value="regex_match">正则匹配</MenuItem>
+                    <MenuItem value="null">为空 (Null)</MenuItem>
+                    <MenuItem value="empty_array">空数组</MenuItem>
+                  </Select>
+
+                  <TextField
+                    size="small"
+                    placeholder="匹配值 (Value)"
+                    value={rule.value}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      updateActiveResponse((resp) => ({
+                        ...resp,
+                        rules: (resp.rules || []).map((r, i) => (i === idx ? { ...r, value } : r))
+                      }));
+                    }}
+                    InputProps={{ sx: { height: 28, fontSize: '0.75rem' } }}
+                    sx={{ flex: 1 }}
+                  />
+
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      updateActiveResponse((resp) => ({
+                        ...resp,
+                        rules: (resp.rules || []).filter((_, i) => i !== idx)
+                      }));
+                    }}
+                    sx={{ '&:hover': { color: theme.palette.error.main } }}
+                  >
+                    <DeleteOutlineRoundedIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Box>
+              ))}
+            </Paper>
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 };

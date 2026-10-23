@@ -18,6 +18,10 @@ interface AppContextType {
   serverLogs: Record<string, Transaction[]>;
   activeTabKey: string;
   setActiveTabKey: (key: string) => void;
+  selectedRouteUuid: string | null;
+  setSelectedRouteUuid: (uuid: string | null) => void;
+  addRoute: () => void;
+  deleteRoute: (uuid: string) => void;
   setActiveEnvironmentUuid: (uuid: string) => void;
   updateActiveEnvironment: (updater: (prev: Environment) => Environment) => void;
   createEnvironment: () => Promise<void>;
@@ -162,6 +166,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [serverStatuses, setServerStatuses] = useState<Record<string, ServerStatus>>({});
   const [serverLogs, setServerLogs] = useState<Record<string, Transaction[]>>({});
   const [activeTabKey, setActiveTabKey] = useState<string>('routes');
+  const [selectedRouteUuid, setSelectedRouteUuid] = useState<string | null>(null);
   const [navTabsOrder, setNavTabsOrderState] = useState<string[]>(DEFAULT_NAV_TABS);
 
   const [themeMode, setThemeModeState] = useState<'light' | 'dark'>('dark');
@@ -506,6 +511,71 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setServerLogs((prev) => ({ ...prev, [uuid]: [] }));
   }, []);
 
+  // Add Route
+  const addRoute = useCallback(() => {
+    if (!activeEnvironment) return;
+    const newRoute: Route = {
+      uuid: 'route_' + Math.random().toString(36).substring(2, 10),
+      type: 'http',
+      documentation: '',
+      method: 'get',
+      endpoint: 'new-endpoint',
+      responses: [
+        {
+          uuid: 'resp_' + Math.random().toString(36).substring(2, 10),
+          body: '{\n  "message": "Hello from MockPulse"\n}',
+          latency: 0,
+          statusCode: 200,
+          label: '200 OK',
+          headers: [{ key: 'Content-Type', value: 'application/json' }],
+          bodyType: 'INLINE',
+          filePath: '',
+          databucketID: '',
+          sendFileAsBody: false,
+          rules: [],
+          rulesOperator: 'OR',
+          disableTemplating: false,
+          fallbackTo404: false,
+          default: true,
+          crudKey: 'id',
+          callbacks: []
+        }
+      ],
+      responseMode: null,
+      streamingMode: null,
+      streamingInterval: 0
+    };
+
+    updateActiveEnvironment((env) => ({
+      ...env,
+      routes: [...env.routes, newRoute]
+    }));
+    setSelectedRouteUuid(newRoute.uuid);
+    setActiveTabKey('routes');
+  }, [activeEnvironment, updateActiveEnvironment]);
+
+  // Delete Route
+  const deleteRoute = useCallback((routeUuid: string) => {
+    if (!activeEnvironment) return;
+    updateActiveEnvironment((env) => ({
+      ...env,
+      routes: env.routes.filter((r) => r.uuid !== routeUuid)
+    }));
+    if (selectedRouteUuid === routeUuid) {
+      const remaining = activeEnvironment.routes.filter((r) => r.uuid !== routeUuid);
+      setSelectedRouteUuid(remaining[0]?.uuid || null);
+    }
+  }, [activeEnvironment, selectedRouteUuid, updateActiveEnvironment]);
+
+  // Auto select first route if none selected
+  useEffect(() => {
+    if (activeEnvironment && activeEnvironment.routes.length > 0) {
+      if (!selectedRouteUuid || !activeEnvironment.routes.some((r) => r.uuid === selectedRouteUuid)) {
+        setSelectedRouteUuid(activeEnvironment.routes[0].uuid);
+      }
+    }
+  }, [activeEnvironment?.uuid]);
+
   return (
     <AppContext.Provider
       value={{
@@ -517,6 +587,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         serverLogs,
         activeTabKey,
         setActiveTabKey,
+        selectedRouteUuid,
+        setSelectedRouteUuid,
+        addRoute,
+        deleteRoute,
         setActiveEnvironmentUuid,
         updateActiveEnvironment,
         createEnvironment,
