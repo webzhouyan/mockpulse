@@ -7,12 +7,16 @@ import {
   Header,
   Callback,
   DataBucket,
+  Folder,
+  FolderChild,
   Transaction,
   BuildDemoEnvironment,
   BuildHTTPRoute,
   BuildCRUDRoute,
   BuildWebSocketRoute,
-  BuildFolder
+  BuildFolder,
+  reorderRoutesMutator,
+  ReorderActionType
 } from '@mockoon/commons';
 import { Settings, EnvironmentDescriptor } from 'src/shared/models/settings.model';
 import { apiService } from '../services/api.service';
@@ -38,6 +42,8 @@ interface AppContextType {
   duplicateRoute: (uuid: string) => void;
   deleteRoute: (uuid: string) => void;
   addFolder: (name?: string) => void;
+  updateFolder: (folderUuid: string, partial: Partial<Folder>) => void;
+  deleteFolder: (folderUuid: string) => void;
   setActiveEnvironmentUuid: (uuid: string) => void;
   updateActiveEnvironment: (updater: (prev: Environment) => Environment) => void;
   createEnvironment: () => Promise<void>;
@@ -494,7 +500,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     updateActiveEnvironment((env) => ({
       ...env,
-      routes: [...env.routes, newRoute]
+      routes: [...env.routes, newRoute],
+      rootChildren: [...(env.rootChildren || []), { type: 'route', uuid: newRoute.uuid }]
     }));
     setSelectedRouteUuid(newRoute.uuid);
     setActiveTabKey('routes');
@@ -521,9 +528,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const nextRoutes = [...activeEnvironment.routes];
     nextRoutes.splice(targetIdx + 1, 0, duplicated);
 
+    // Also insert into rootChildren or container folder
+    let nextRootChildren = [...(activeEnvironment.rootChildren || [])];
+    const rootIdx = nextRootChildren.findIndex((c) => c.uuid === routeUuid);
+    if (rootIdx !== -1) {
+      nextRootChildren.splice(rootIdx + 1, 0, { type: 'route', uuid: duplicated.uuid });
+    } else {
+      nextRootChildren.push({ type: 'route', uuid: duplicated.uuid });
+    }
+
     updateActiveEnvironment((env) => ({
       ...env,
-      routes: nextRoutes
+      routes: nextRoutes,
+      rootChildren: nextRootChildren
     }));
     setSelectedRouteUuid(duplicated.uuid);
     setActiveTabKey('routes');
@@ -536,7 +553,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     newFolder.name = name;
     updateActiveEnvironment((env) => ({
       ...env,
-      folders: [...(env.folders || []), newFolder]
+      folders: [...(env.folders || []), newFolder],
+      rootChildren: [...(env.rootChildren || []), { type: 'folder', uuid: newFolder.uuid }]
+    }));
+  }, [activeEnvironment, updateActiveEnvironment]);
+
+  // Update Folder
+  const updateFolder = useCallback((folderUuid: string, partial: Partial<Folder>) => {
+    if (!activeEnvironment) return;
+    updateActiveEnvironment((env) => ({
+      ...env,
+      folders: (env.folders || []).map((f) => (f.uuid === folderUuid ? { ...f, ...partial } : f))
+    }));
+  }, [activeEnvironment, updateActiveEnvironment]);
+
+  // Delete Folder
+  const deleteFolder = useCallback((folderUuid: string) => {
+    if (!activeEnvironment) return;
+    const targetFolder = (activeEnvironment.folders || []).find((f) => f.uuid === folderUuid);
+    const childRoutes = targetFolder?.children.filter((c) => c.type === 'route') || [];
+
+    updateActiveEnvironment((env) => ({
+      ...env,
+      folders: (env.folders || []).filter((f) => f.uuid !== folderUuid),
+      rootChildren: [
+        ...(env.rootChildren || []).filter((c) => c.uuid !== folderUuid),
+        ...childRoutes
+      ]
     }));
   }, [activeEnvironment, updateActiveEnvironment]);
 
@@ -545,7 +588,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!activeEnvironment) return;
     updateActiveEnvironment((env) => ({
       ...env,
-      routes: env.routes.filter((r) => r.uuid !== routeUuid)
+      routes: env.routes.filter((r) => r.uuid !== routeUuid),
+      rootChildren: (env.rootChildren || []).filter((c) => c.uuid !== routeUuid),
+      folders: (env.folders || []).map((f) => ({
+        ...f,
+        children: f.children.filter((c) => c.uuid !== routeUuid)
+      }))
     }));
     if (selectedRouteUuid === routeUuid) {
       const remaining = activeEnvironment.routes.filter((r) => r.uuid !== routeUuid);
@@ -579,6 +627,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         duplicateRoute,
         deleteRoute,
         addFolder,
+        updateFolder,
+        deleteFolder,
         setActiveEnvironmentUuid,
         updateActiveEnvironment,
         createEnvironment,
