@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release Tag (e.g. v1.0.0)'
+        description: 'Release Tag (e.g. v1.0.1)'
         required: true
-        default: 'v1.0.0'
+        default: 'v1.0.1'
 
 permissions:
   contents: write
@@ -90,10 +90,13 @@ jobs:
         id: release_tag
         run: |
           if [ -n "${{ github.event.inputs.tag }}" ]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+            TAG="${{ github.event.inputs.tag }}"
           else
-            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            TAG="${GITHUB_REF#refs/tags/}"
           fi
+          CLEAN_VER="${TAG#v}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "clean_version=${CLEAN_VER}" >> $GITHUB_OUTPUT
 
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
@@ -128,13 +131,13 @@ jobs:
 
             | 操作系统 | 安装包格式 | 说明 |
             | :--- | :--- | :--- |
-            | 🪟 **Windows (x64)** | `MockPulse.setup.1.0.0.exe` | 标准安装程序（支持自定义安装路径） |
-            | 🪟 **Windows (x64)** | `MockPulse.portable.1.0.0.exe` | 绿色便携版免安装，解压直接运行 |
-            | 🍎 **macOS (Apple Silicon)** | `MockPulse.setup.1.0.0.arm64.dmg` | 适用于 M1/M2/M3/M4 系列 Mac |
-            | 🍎 **macOS (Intel)** | `MockPulse.setup.1.0.0.x64.dmg` | 适用于 Intel 架构 Mac |
-            | 🐧 **Linux (x64)** | `MockPulse-1.0.0.x86_64.AppImage` | 通用独立可执行文件，双击即运行 |
-            | 🐧 **Linux (Debian/Ubuntu)** | `MockPulse-1.0.0.amd64.deb` | `sudo dpkg -i MockPulse-1.0.0.amd64.deb` |
-            | 🐧 **Linux (Fedora/RHEL)** | `MockPulse-1.0.0.x86_64.rpm` | `sudo rpm -ivh MockPulse-1.0.0.x86_64.rpm` |
+            | 🪟 **Windows (x64)** | `MockPulse.setup.${{ steps.release_tag.outputs.clean_version }}.exe` | 标准安装程序（支持自定义安装路径） |
+            | 🪟 **Windows (x64)** | `MockPulse.portable.${{ steps.release_tag.outputs.clean_version }}.exe` | 绿色便携版免安装，解压直接运行 |
+            | 🍎 **macOS (Apple Silicon)** | `MockPulse.setup.${{ steps.release_tag.outputs.clean_version }}.arm64.dmg` | 适用于 M1/M2/M3/M4 系列 Mac |
+            | 🍎 **macOS (Intel)** | `MockPulse.setup.${{ steps.release_tag.outputs.clean_version }}.x64.dmg` | 适用于 Intel 架构 Mac |
+            | 🐧 **Linux (x64)** | `MockPulse-${{ steps.release_tag.outputs.clean_version }}.x86_64.AppImage` | 通用独立可执行文件，双击即运行 |
+            | 🐧 **Linux (Debian/Ubuntu)** | `MockPulse-${{ steps.release_tag.outputs.clean_version }}.amd64.deb` | `sudo dpkg -i MockPulse-${{ steps.release_tag.outputs.clean_version }}.amd64.deb` |
+            | 🐧 **Linux (Fedora/RHEL)** | `MockPulse-${{ steps.release_tag.outputs.clean_version }}.x86_64.rpm` | `sudo rpm -ivh MockPulse-${{ steps.release_tag.outputs.clean_version }}.x86_64.rpm` |
 
             ---
 
