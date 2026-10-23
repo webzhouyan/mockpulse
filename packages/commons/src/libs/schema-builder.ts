@@ -257,7 +257,8 @@ export const BuildDemoEnvironment = (): Environment => {
     BuildHTTPRoute(), // rules
     BuildHTTPRoute(), // route patterns
     BuildHTTPRoute(), // guard
-    BuildHTTPRoute()
+    BuildHTTPRoute(), // protected/path
+    BuildHTTPRoute() // forward-and-record
   ];
 
   return {

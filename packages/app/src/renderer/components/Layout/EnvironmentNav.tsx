@@ -351,13 +351,13 @@ export const EnvironmentNav: React.FC = () => {
     }
 
     const isSelected = activeTabKey === 'routes' && selectedRouteUuid === route.uuid;
-    const isDragging = draggingItem?.id === route.uuid;
-    const isDropBefore = dropIndicator?.targetId === route.uuid && dropIndicator.position === 'BEFORE';
-    const isDropAfter = dropIndicator?.targetId === route.uuid && dropIndicator.position === 'AFTER';
+    const isDragging = !!draggingItem && draggingItem.id === route.uuid;
+    const isDropBefore = !!dropIndicator && !!route.uuid && dropIndicator.targetId === route.uuid && dropIndicator.position === 'BEFORE';
+    const isDropAfter = !!dropIndicator && !!route.uuid && dropIndicator.targetId === route.uuid && dropIndicator.position === 'AFTER';
 
-    const methodKey = (route.type === 'crud' ? 'crud' : route.type === 'ws' ? 'ws' : route.method).toLowerCase();
+    const methodKey = (route.type === 'crud' ? 'crud' : route.type === 'ws' ? 'ws' : route.method || 'get').toLowerCase();
     const methodCfg = METHOD_COLORS[methodKey] || METHOD_COLORS.get;
-    const badgeLabel = route.type === 'crud' ? 'CRUD' : route.type === 'ws' ? 'WS' : route.method;
+    const badgeLabel = route.type === 'crud' ? 'CRUD' : route.type === 'ws' ? 'WS' : route.method || 'GET';
     const cleanEndpoint = (route.endpoint || '').replace(/^\//, '');
 
     return (
@@ -501,10 +501,10 @@ export const EnvironmentNav: React.FC = () => {
   // Render a folder item
   const renderFolderItem = (folder: Folder) => {
     const isCollapsed = !!collapsedFolderUuids[folder.uuid];
-    const isDragging = draggingItem?.id === folder.uuid;
-    const isDropBefore = dropIndicator?.targetId === folder.uuid && dropIndicator.position === 'BEFORE';
-    const isDropAfter = dropIndicator?.targetId === folder.uuid && dropIndicator.position === 'AFTER';
-    const isDropInside = dropIndicator?.targetId === folder.uuid && dropIndicator.position === 'INSIDE';
+    const isDragging = !!draggingItem && draggingItem.id === folder.uuid;
+    const isDropBefore = !!dropIndicator && !!folder.uuid && dropIndicator.targetId === folder.uuid && dropIndicator.position === 'BEFORE';
+    const isDropAfter = !!dropIndicator && !!folder.uuid && dropIndicator.targetId === folder.uuid && dropIndicator.position === 'AFTER';
+    const isDropInside = !!dropIndicator && !!folder.uuid && dropIndicator.targetId === folder.uuid && dropIndicator.position === 'INSIDE';
 
     const childRoutes = (folder.children || [])
       .map((c) => (c.type === 'route' ? routeMap.get(c.uuid) : null))
@@ -1099,6 +1099,7 @@ export const EnvironmentNav: React.FC = () => {
           <Collapse in={isRoutesOpen}>
             <List sx={{ p: 0, mt: 0.3 }}>
               {rootChildrenList.map((item) => {
+                if (!item || !item.uuid) return null;
                 if (item.type === 'folder') {
                   const folder = folderMap.get(item.uuid);
                   if (!folder) return null;

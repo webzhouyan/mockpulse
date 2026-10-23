@@ -112,13 +112,116 @@ export const DEFAULT_GLOBAL_HEADERS = [
   { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Origin, Accept, Authorization, Content-Length, X-Requested-With' }
 ];
 
+export const sanitizeEnvironment = (env: any): Environment => {
+  if (!env) return env;
+  const sanitized: Environment = {
+    ...env,
+    uuid: env.uuid || 'env_' + Math.random().toString(36).substring(2, 10),
+    folders: Array.isArray(env.folders)
+      ? env.folders.map((f: any) => ({
+          ...f,
+          uuid: f.uuid || 'folder_' + Math.random().toString(36).substring(2, 10),
+          children: Array.isArray(f.children) ? f.children.filter((c: any) => c && c.uuid) : []
+        }))
+      : [],
+    routes: Array.isArray(env.routes)
+      ? env.routes.map((r: any) => ({
+          ...r,
+          uuid: r.uuid || 'route_' + Math.random().toString(36).substring(2, 10),
+          type: r.type || 'http',
+          method: r.method || (r.type === 'crud' ? '' : 'get'),
+          responses: Array.isArray(r.responses) ? r.responses : []
+        }))
+      : [],
+    data: Array.isArray(env.data) ? env.data : [],
+    callbacks: Array.isArray(env.callbacks) ? env.callbacks : [],
+    headers: Array.isArray(env.headers) ? env.headers : [],
+    rootChildren: Array.isArray(env.rootChildren) ? env.rootChildren.filter((c: any) => c && c.uuid) : []
+  };
+
+  const accounted = new Set<string>();
+  sanitized.rootChildren.forEach((c) => accounted.add(c.uuid));
+  sanitized.folders.forEach((f) => {
+    accounted.add(f.uuid);
+    f.children?.forEach((c) => accounted.add(c.uuid));
+  });
+
+  const missingFolders = sanitized.folders.filter((f) => !accounted.has(f.uuid));
+  const missingRoutes = sanitized.routes.filter((r) => !accounted.has(r.uuid));
+
+  sanitized.rootChildren = [
+    ...sanitized.rootChildren,
+    ...missingFolders.map((f) => ({ type: 'folder' as const, uuid: f.uuid })),
+    ...missingRoutes.map((r) => ({ type: 'route' as const, uuid: r.uuid }))
+  ];
+
+  return sanitized;
+};
+
 const createDefaultEnvironment = (name?: string): Environment => {
   const demoEnv = BuildDemoEnvironment();
-  return {
-    ...demoEnv,
-    name: name || 'Demo API',
-    hostname: 'localhost'
-  };
+  const envUuid = 'env_' + Math.random().toString(36).substring(2, 10);
+
+  // Deep clone and regenerate UUIDs
+  const cloned = JSON.parse(JSON.stringify(demoEnv));
+  cloned.uuid = envUuid;
+  cloned.name = name || 'Demo API';
+  cloned.hostname = 'localhost';
+
+  const uuidMap = new Map<string, string>();
+  if (Array.isArray(cloned.data)) {
+    cloned.data.forEach((d: any) => {
+      const oldId = d.id;
+      const newId = Math.random().toString(36).substring(2, 6);
+      d.uuid = 'bucket_' + Math.random().toString(36).substring(2, 10);
+      d.id = newId;
+      uuidMap.set(oldId, newId);
+    });
+  }
+
+  if (Array.isArray(cloned.routes)) {
+    cloned.routes.forEach((r: any) => {
+      const oldRouteUuid = r.uuid;
+      const newRouteUuid = 'route_' + Math.random().toString(36).substring(2, 10);
+      r.uuid = newRouteUuid;
+      if (oldRouteUuid) uuidMap.set(oldRouteUuid, newRouteUuid);
+
+      if (Array.isArray(r.responses)) {
+        r.responses.forEach((resp: any) => {
+          resp.uuid = 'resp_' + Math.random().toString(36).substring(2, 10);
+          if (resp.databucketID && uuidMap.has(resp.databucketID)) {
+            resp.databucketID = uuidMap.get(resp.databucketID);
+          }
+        });
+      }
+    });
+  }
+
+  if (Array.isArray(cloned.folders)) {
+    cloned.folders.forEach((f: any) => {
+      const oldFolderUuid = f.uuid;
+      const newFolderUuid = 'folder_' + Math.random().toString(36).substring(2, 10);
+      f.uuid = newFolderUuid;
+      if (oldFolderUuid) uuidMap.set(oldFolderUuid, newFolderUuid);
+      if (Array.isArray(f.children)) {
+        f.children.forEach((c: any) => {
+          if (uuidMap.has(c.uuid)) {
+            c.uuid = uuidMap.get(c.uuid);
+          }
+        });
+      }
+    });
+  }
+
+  if (Array.isArray(cloned.rootChildren)) {
+    cloned.rootChildren.forEach((c: any) => {
+      if (uuidMap.has(c.uuid)) {
+        c.uuid = uuidMap.get(c.uuid);
+      }
+    });
+  }
+
+  return sanitizeEnvironment(cloned);
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -175,7 +278,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (!desc.cloud && desc.path) {
           const envData = await apiService.readEnvironment(desc.path);
           if (envData) {
-            envList.push(envData);
+            envList.push(sanitizeEnvironment(envData));
           }
         }
       }
@@ -339,27 +442,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!res.canceled && res.filePaths?.[0]) {
       const filePath = res.filePaths[0];
       const data = await apiService.readEnvironment(filePath);
-      if (data && data.uuid) {
-        data.uuid = 'env_' + Math.random().toString(36).substring(2, 10);
-        data.name = `${data.name} (Imported)`;
-        const newPath = await apiService.buildStorageFilePath(data.uuid);
+      if (data) {
+        const cleanData = sanitizeEnvironment(data);
+        cleanData.uuid = 'env_' + Math.random().toString(36).substring(2, 10);
+        cleanData.name = `${cleanData.name || 'Imported'} (Imported)`;
+        const newPath = await apiService.buildStorageFilePath(cleanData.uuid);
         const desc: EnvironmentDescriptor = {
-          uuid: data.uuid,
+          uuid: cleanData.uuid,
           path: newPath,
           cloud: false,
           lastServerHash: null
         };
-        await apiService.writeEnvironment(data, desc, true);
+        await apiService.writeEnvironment(cleanData, desc, true);
 
-        const nextEnvs = [...environments, data];
+        const nextEnvs = [...environments, cleanData];
         setEnvironments(nextEnvs);
-        setActiveEnvironmentUuid(data.uuid);
+        setActiveEnvironmentUuid(cleanData.uuid);
 
         if (settings) {
           const nextSettings: Settings = {
             ...settings,
             environments: [...settings.environments, desc],
-            activeEnvironmentUuid: data.uuid
+            activeEnvironmentUuid: cleanData.uuid
           };
           setSettings(nextSettings);
           await apiService.writeSettings(nextSettings);
@@ -392,7 +496,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const target = environments.find((e) => e.uuid === uuid);
     if (!target) return;
 
-    const copy: Environment = JSON.parse(JSON.stringify(target));
+    const copy: Environment = sanitizeEnvironment(JSON.parse(JSON.stringify(target)));
     copy.uuid = 'env_' + Math.random().toString(36).substring(2, 10);
     copy.name = `${copy.name} (Copy)`;
     copy.port = (copy.port || 3000) + 1;
