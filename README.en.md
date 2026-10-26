@@ -21,6 +21,10 @@
   </p>
 </p>
 
+<p align="center">
+  <img src="./assets/1.png" alt="MockPulse Workspace Preview" width="95%" style="border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,0.15);" />
+</p>
+
 ---
 
 ## 📢 Special Acknowledgment & Fork Declaration
@@ -98,6 +102,31 @@ MockPulse inherits Mockoon's robust core simulation engines (`@mockoon/commons-s
   - Bind to `0.0.0.0` (Local Area Network) or `localhost` (Machine only).
   - Configure default global latency and inject CORS preflight headers with one click.
   - Custom TLS/HTTPS support using PFX or PEM certificates.
+
+---
+
+## 📸 Screenshots
+
+### 1. Workspace & Response Templating (Light Mode)
+> Visual multi-environment management, hierarchical route tree, HTTP / CRUD / WebSocket endpoints, multi-response branching, and CodeMirror JSON editing with syntax highlighting and folding.
+
+<p align="center">
+  <img src="./assets/1.png" alt="MockPulse Workspace" width="95%" style="border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);" />
+</p>
+
+### 2. Modern Application Settings
+> Real-time Light/Dark theme switching, 5 designer color presets (Emerald Teal, Indigo Blue, etc.), Compact/Comfortable layout densities, and multi-language internationalization.
+
+<p align="center">
+  <img src="./assets/2.png" alt="MockPulse Settings Dialog" width="85%" style="border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);" />
+</p>
+
+### 3. CRUD Routes & Dynamic Data Buckets (Dark Mode)
+> Auto-generate complete RESTful collections with custom key fields, integrated with Faker.js and Handlebars dynamic data generator.
+
+<p align="center">
+  <img src="./assets/3.png" alt="MockPulse CRUD & Data Buckets" width="95%" style="border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);" />
+</p>
 
 ---
 

@@ -21,6 +21,10 @@
   </p>
 </p>
 
+<p align="center">
+  <img src="./assets/1.png" alt="MockPulse 接口工作台主界面" width="95%" style="border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,0.15);" />
+</p>
+
 ---
 
 ## 📢 特别致谢与二次开发声明
@@ -98,6 +102,31 @@ MockPulse 在继承 Mockoon 原生核心能力（底层模拟引擎 `@mockoon/co
   - 支持配置全局默认延迟（ms）及一键应用 CORS 跨域响应头。
   - 支持绑定 `0.0.0.0` 局域网监听或 `localhost` 本地监听。
   - 支持自定义 PFX / CERT / KEY 证书与私钥启用原生 HTTPS。
+
+---
+
+## 📸 界面预览
+
+### 1. 接口工作台与模板语法高亮（浅色模式）
+> 可视化多环境管理、树形层级目录、HTTP / CRUD / WebSocket 路由、多响应分支配置及 CodeMirror JSON 语法高亮与折叠。
+
+<p align="center">
+  <img src="./assets/1.png" alt="MockPulse 接口工作台" width="95%" style="border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);" />
+</p>
+
+### 2. 现代化应用设置中心
+> 深浅色模式实时切换、5 套精美主题色预设（翡翠青、极光蓝等）、紧凑/舒适布局密度调整与中英文国际化语言切换。
+
+<p align="center">
+  <img src="./assets/2.png" alt="MockPulse 应用设置弹窗" width="85%" style="border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);" />
+</p>
+
+### 3. CRUD 路由与数据桶服务联动（沉浸深色模式）
+> 原生 CRUD 自动生成全套 RESTful 操作，搭配 Faker.js 与 Handlebars 动态数据桶引擎，轻松生成高仿真模拟数据。
+
+<p align="center">
+  <img src="./assets/3.png" alt="MockPulse CRUD 路由与数据桶" width="95%" style="border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);" />
+</p>
 
 ---
 
