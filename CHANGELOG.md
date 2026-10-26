@@ -4,6 +4,21 @@
 
 ---
 
+## [1.0.2] - 2026-10-26
+
+### ⚡ 架构瘦身与依赖裁剪 (Codebase Slimming)
+- **子包物理级精简**：彻底移除针对云函数平台的 `packages/serverless` 以及无头命令行版 `packages/cli`，使 Monorepo 体系完全聚焦于纯本地离线桌面端应用。
+- **依赖大幅削减**：精简移除 1,021 个冗余 npm 包，`node_modules` 依赖体积显著缩减，大幅加快冷启动与打包构建速度。
+- **废弃测试套件移除**：彻底删除旧版遗留的 Angular WDIO 界面自动化测试代码与测试配置，同步剥离 `@wdio/*`、`puppeteer-core`、`@electron/notarize` 等重型依赖。
+- **CI 流水线轻量化**：移除 GitHub Actions CI 中已失效的 `test-cli` 任务，构建流程更精简高效。
+
+### 🎨 界面与体验优化 (Enhancements)
+- **CodeMirror 无界沉浸体验**：注入主题级扩展规则，彻底消除 JSON 响应报文与请求编辑框行号槽位右侧的竖直分割线，代码编辑视界更纯净。
+- **安装包命名去除 setup**：规范全平台安装包命名规则，去除了多余的 `setup` 标识，生成如 `MockPulse-1.0.2.exe` / `MockPulse-1.0.2.arm64.dmg`。
+- **文档与视觉资产更新**：中英文 README 新增主工作台、偏好设置弹窗及 CRUD 数据桶服务 3 张高清全景界面截图与特色指引。
+
+---
+
 ## [1.0.1] - 2026-10-23
 
 ### 🐛 缺陷修复 (Bug Fixes)
