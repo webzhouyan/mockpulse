@@ -77,7 +77,8 @@ export const RoutesView: React.FC = () => {
     activeEnvironment,
     updateActiveEnvironment,
     selectedRouteUuid,
-    setActiveTabKey
+    setActiveTabKey,
+    addRoute
   } = useApp();
 
   const [selectedResponseIndex, setSelectedResponseIndex] = useState(0);
@@ -238,10 +239,49 @@ export const RoutesView: React.FC = () => {
 
   if (!activeRoute || !activeResponse) {
     return (
-      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-          暂未选择路由接口或暂无路由数据
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          p: 3,
+          gap: 1.5
+        }}
+      >
+        <AltRouteRoundedIcon
+          sx={{
+            fontSize: 48,
+            color: alpha(theme.palette.text.secondary, 0.35)
+          }}
+        />
+        <Typography
+          variant="body2"
+          sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}
+        >
+          {locale === 'zh-CN'
+            ? '当前环境暂无路由接口'
+            : 'No routes defined in this environment'}
         </Typography>
+        <Button
+          variant="contained"
+          size="small"
+          startIcon={<AddRoundedIcon sx={{ fontSize: 18 }} />}
+          onClick={() => addRoute('http')}
+          sx={{
+            mt: 0.5,
+            px: 2,
+            py: 0.6,
+            borderRadius: 1.5,
+            textTransform: 'none',
+            fontSize: '0.82rem',
+            fontWeight: 600
+          }}
+        >
+          {locale === 'zh-CN' ? '新建路由接口' : 'Add Route'}
+        </Button>
       </Box>
     );
   }

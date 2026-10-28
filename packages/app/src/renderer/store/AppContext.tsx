@@ -1,6 +1,7 @@
 import {
   BuildCRUDRoute,
   BuildDemoEnvironment,
+  BuildEnvironment,
   BuildFolder,
   BuildHTTPRoute,
   BuildWebSocketRoute,
@@ -202,14 +203,18 @@ export const sanitizeEnvironment = (env: any): Environment => {
   return sanitized;
 };
 
-const createDefaultEnvironment = (name?: string): Environment => {
+/**
+ * Create initial demo environment with full demo route endpoints & databuckets.
+ * Only used when the app starts for the first time without any environments.
+ */
+const createDemoEnvironment = (name?: string): Environment => {
   const demoEnv = BuildDemoEnvironment();
   const envUuid = 'env_' + Math.random().toString(36).substring(2, 10);
 
   // Deep clone and regenerate UUIDs
   const cloned = JSON.parse(JSON.stringify(demoEnv));
   cloned.uuid = envUuid;
-  cloned.name = name || 'Demo API';
+  cloned.name = name || 'MockPulse Demo';
   cloned.hostname = 'localhost';
 
   const uuidMap = new Map<string, string>();
@@ -268,6 +273,29 @@ const createDefaultEnvironment = (name?: string): Environment => {
   }
 
   return sanitizeEnvironment(cloned);
+};
+
+/**
+ * Create a clean, empty environment without demo data/routes.
+ * Used for all newly created environments.
+ */
+const createCleanEnvironment = (name?: string, port?: number): Environment => {
+  const env = BuildEnvironment({
+    hasDefaultRoute: false,
+    hasContentTypeHeader: true,
+    hasCorsHeaders: true,
+    port: port || 3000
+  });
+  env.uuid = 'env_' + Math.random().toString(36).substring(2, 10);
+  env.name = name || 'New environment';
+  env.hostname = 'localhost';
+  env.routes = [];
+  env.rootChildren = [];
+  env.folders = [];
+  env.data = [];
+  env.callbacks = [];
+
+  return sanitizeEnvironment(env);
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -363,9 +391,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       }
 
-      // If no environment exists, create a default one
+      // If no environment exists, create initial demo environment with demo data
       if (envList.length === 0) {
-        const defaultEnv = createDefaultEnvironment('MockPulse Demo');
+        const defaultEnv = createDemoEnvironment('MockPulse Demo');
         const storagePath = await apiService.buildStorageFilePath(
           defaultEnv.uuid
         );
@@ -536,17 +564,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     [activeEnvironment, settings]
   );
 
-  // Create Environment
+  // Create Environment (Clean environment without demo data)
   const createEnvironment = useCallback(async () => {
     const maxPort = environments.reduce(
       (max, env) => Math.max(max, env.port || 3000),
       2999
     );
     const newPort = maxPort + 1;
-    const newEnv = createDefaultEnvironment(
-      `API Env ${environments.length + 1}`
+    const newEnv = createCleanEnvironment(
+      `API Env ${environments.length + 1}`,
+      newPort
     );
-    newEnv.port = newPort;
     const filePath = await apiService.buildStorageFilePath(newEnv.uuid);
     const desc: EnvironmentDescriptor = {
       uuid: newEnv.uuid,
@@ -560,6 +588,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const nextEnvs = [...environments, newEnv];
     setEnvironments(nextEnvs);
     setActiveEnvironmentUuid(newEnv.uuid);
+    setSelectedRouteUuid(null);
+    setActiveTabKey('routes');
 
     if (settings) {
       const recent: RecentLocalEnvironment = {
@@ -1164,14 +1194,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     [activeEnvironment, selectedRouteUuid, updateActiveEnvironment]
   );
 
-  // Auto select first route if none selected
+  // Auto select first route if none selected, or reset if active environment has no routes
   useEffect(() => {
-    if (activeEnvironment && activeEnvironment.routes.length > 0) {
-      if (
-        !selectedRouteUuid ||
-        !activeEnvironment.routes.some((r) => r.uuid === selectedRouteUuid)
-      ) {
-        setSelectedRouteUuid(activeEnvironment.routes[0].uuid);
+    if (activeEnvironment) {
+      if (activeEnvironment.routes.length > 0) {
+        if (
+          !selectedRouteUuid ||
+          !activeEnvironment.routes.some((r) => r.uuid === selectedRouteUuid)
+        ) {
+          setSelectedRouteUuid(activeEnvironment.routes[0].uuid);
+        }
+      } else {
+        setSelectedRouteUuid(null);
       }
     }
   }, [activeEnvironment?.uuid]);
