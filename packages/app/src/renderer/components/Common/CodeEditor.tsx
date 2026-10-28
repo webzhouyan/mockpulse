@@ -19,7 +19,7 @@ import AutoFixHighRoundedIcon from '@mui/icons-material/AutoFixHighRounded';
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import FullscreenRoundedIcon from '@mui/icons-material/FullscreenRounded';
 import FullscreenExitRoundedIcon from '@mui/icons-material/FullscreenExitRounded';
-import CodeMirror, { EditorView } from '@uiw/react-codemirror';
+import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
 import { githubLight, githubDark } from '@uiw/codemirror-theme-github';
 import { useI18n } from '../../i18n';
@@ -52,32 +52,8 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     return value.split('\n').length;
   }, [value]);
 
-  // CodeMirror theme extension to completely eliminate gutter border/divider line
-  const gutterNoBorderTheme = useMemo(
-    () =>
-      EditorView.theme({
-        '&.cm-editor': {
-          outline: 'none'
-        },
-        '.cm-gutters': {
-          border: 'none !important',
-          borderRight: 'none !important',
-          backgroundColor: 'transparent !important'
-        },
-        '.cm-gutters-before': {
-          borderRight: 'none !important',
-          borderRightWidth: '0 !important'
-        },
-        '.cm-gutter': {
-          border: 'none !important',
-          borderRight: 'none !important'
-        }
-      }),
-    []
-  );
-
-  // CodeMirror extensions with JSON syntax highlighting, folding and borderless gutter
-  const extensions = useMemo(() => [json(), gutterNoBorderTheme], [gutterNoBorderTheme]);
+  // CodeMirror extensions with JSON syntax highlighting and folding
+  const extensions = useMemo(() => [json()], []);
 
   // Format JSON
   const handleFormat = () => {
@@ -233,12 +209,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
           },
           '& .cm-content': {
             fontFamily: "'Fira Code', 'JetBrains Mono', Consolas, monospace"
-          },
-          '& .cm-gutters, & .cm-gutters-before, & .cm-gutter': {
-            border: 'none !important',
-            borderRight: 'none !important',
-            borderRightWidth: '0 !important',
-            backgroundColor: 'transparent !important'
           }
         }}
       >
